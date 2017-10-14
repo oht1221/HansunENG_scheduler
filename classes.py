@@ -1,5 +1,6 @@
 from collections import deque
 import random
+import numpy as np
 
 class CNC:
     def __init__(self, number = ' ', ground = ' ', ceiling = ' ', shape = ' ', type = ' '):
@@ -22,7 +23,7 @@ class CNC:
         for j in self.jobQ:
             i = (i + 1) % 5
             print(j.getNumber(), end=' (')
-            for n in range(3):
+            for n in range(len(j.getSeries())):
                 print(j.getComponent(n).ifDone(), end = ' ')
             print(end = ')')
             if(i == 0): print(' ')
@@ -77,11 +78,13 @@ class job:
         self.type = type
         self.size = size
         self.quantity = quantity
-        self.series = []
+        self.series = [component(time[i], self, quantity) for i in range(len(time))]
         self.due  = sum(time) * quantity * random.choice(range(2, 6, 1))
 
-        for i in range(0,3):
-            self.series.append(component(time[i], self, quantity))
+        '''for i in size(time):
+            self.series.append(component(time[i], self, quantity)) '''
+    def getSeries(self):
+        return self.series
 
     def getComponent(self, n):
         return self.series[n]
@@ -99,11 +102,9 @@ class job:
     def getType(self):
         return self.type
 
-    def components(self,n):
-        return self.series[n]
-
     def ifAllDone(self):
-        return self.series[0].ifDone() and self.series[1].ifDone() and self.series[2].ifDone()
+        return np.all([ (self.getSeries())[i].ifDone() for i in range(len(self.getSeries())) ])
+
 
 
 
