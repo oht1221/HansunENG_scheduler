@@ -1,4 +1,5 @@
 from collections import deque
+import random
 
 class CNC:
     def __init__(self, number = ' ', ground = ' ', ceiling = ' ', shape = ' ', type = ' '):
@@ -77,7 +78,7 @@ class job:
         self.size = size
         self.quantity = quantity
         self.series = []
-        self.due  = due
+        self.due  = sum(time) * quantity * random.choice(range(2, 6, 1))
 
         for i in range(0,3):
             self.series.append(component(time[i], self, quantity))
