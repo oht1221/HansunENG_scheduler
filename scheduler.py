@@ -31,15 +31,15 @@ def read_CNCs(input, CNCs):
         cnc = classes.CNC(number, ground, ceiling, shape, type)
         CNCs.append(cnc)
 
-def calculate_cycle_time_avgs(input, item_numbers):
+def calculate_cycle_time_avgs(cycle_time_avgs, input, item_numbers):
     workbook = xlrd.open_workbook(input)
     worksheet = workbook.sheet_by_name("품번별 싸이클 타임 정보")
 
     n_rows = worksheet.nrows
 
     cycle_time_sums = {}
-    cycle_time_avgs = {}
     n = {}
+
     for j in item_numbers:
         cycle_time_sums[j] = [0,0,0]
         cycle_time_avgs[j] = [0,0,0]
@@ -70,14 +70,13 @@ def calculate_cycle_time_avgs(input, item_numbers):
             (cycle_time_avgs[i]).pop(2)
             (n[i]).pop(2)
         for j in range(len(n[i])):
-            (cycle_time_avgs[i])[j] = (cycle_time_sums[i])[j] / (n[i])[j]
+            (cycle_time_avgs[i])[j] = int( (cycle_time_sums[i])[j] / ((n[i])[j]  * 5 ) )
 
 
-    return cycle_time_avgs
+    return 0
 
-def make_to_do_list(input, item_numbers, cycle_time_avgs):
+def make_to_do_list(to_do_list, input, item_numbers, cycle_time_avgs, how_many):
 
-    to_do_list = deque()
     workbook = xlrd.open_workbook(input)
     worksheet1 = workbook.sheet_by_name("단조 사용 품번")
     worksheet2 = workbook.sheet_by_name("HEX BAR 사용 품번")
@@ -85,7 +84,7 @@ def make_to_do_list(input, item_numbers, cycle_time_avgs):
     n_rows2 = worksheet2.nrows
 
 
-    for i in range(200):  #40개의 작업 만들어냄
+    for i in range(how_many):  #how_many개의 작업 만들어냄
         n = random.randrange(0, len(item_numbers)) # len(item_numbers)개의 일 종류
         quantity = random.randrange(50, 100)
         flag = 0
@@ -104,13 +103,15 @@ def make_to_do_list(input, item_numbers, cycle_time_avgs):
                     size = str(row[9])
                     to_do_list.appendleft(classes.job(item_numbers[n], cycle_time_avgs[item_numbers[n]], 1, size, quantity))   # HEX BAR 사용 품번은 type 1로 설정
                     break
-    return to_do_list
+    return 0
 
 
 def assign(CNCs, to_do_list):  #CNC에 job들을 분배하는 함수
     for a in range(len(to_do_list)):
         assignment = to_do_list.pop()
         selected_CNCs = []
+        last_assigned_cnc = classes.CNC()
+
         for c in CNCs:
             if (float(c.getGround()) <= float(assignment.getSize()) < float(c.getCeiling())) \
                     and (c.getShape() == assignment.getType()):  #size 맞는 CNC는 모두 찾음
@@ -126,11 +127,13 @@ def assign(CNCs, to_do_list):  #CNC에 job들을 분배하는 함수
             minIndex = timeLefts.index(minValue)
             #print("max index is : ", minIndex)
             cnc = selected_CNCs[minIndex]
+            last_assigned_cnc = cnc
             cnc.enQ(assignment)
 
+    return last_assigned_cnc
 
 def newJobs():
-    return np.random.choice([0,1], 1, p = [0.9, 0.1])
+    return np.random.choice([0,1], 1, p = [0.9995, 0.0005])
 
 
 def update(CNCs, unitTime):
