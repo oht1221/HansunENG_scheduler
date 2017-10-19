@@ -1,4 +1,5 @@
-import classes
+from cnc import *
+from job import *
 import xlrd
 from collections import deque
 import random
@@ -28,7 +29,7 @@ def read_CNCs(input, CNCs):
         ground = ground[1:]
         ceiling = size.split('~')[1]
 
-        cnc = classes.CNC(number, ground, ceiling, shape, type)
+        cnc = CNC(number, ground, ceiling, shape, type)
         CNCs.append(cnc)
 
 def calculate_cycle_time_avgs(cycle_time_avgs, input, item_numbers):
@@ -92,7 +93,7 @@ def make_to_do_list(to_do_list, input, item_numbers, cycle_time_avgs, how_many):
             row = worksheet1.row_values(j)
             if str(row[4]) == item_numbers[n]:
                 size = str(row[9])
-                to_do_list.appendleft(classes.job(item_numbers[n], cycle_time_avgs[item_numbers[n]], 0, size, quantity))  # 단조 사용 품번은 type 0으로 설정
+                to_do_list.appendleft(job(item_numbers[n], cycle_time_avgs[item_numbers[n]], 0, size, quantity))  # 단조 사용 품번은 type 0으로 설정
                 flag = 1 #단조 사용품번에서 찾았으면  flag를 설정해서 다음 if문(HEX BAR 품번 찾는)을 무시하도록 함
                 break
 
@@ -101,7 +102,7 @@ def make_to_do_list(to_do_list, input, item_numbers, cycle_time_avgs, how_many):
                 row = worksheet2.row_values(j)
                 if str(row[4]) == item_numbers[n]:
                     size = str(row[9])
-                    to_do_list.appendleft(classes.job(item_numbers[n], cycle_time_avgs[item_numbers[n]], 1, size, quantity))   # HEX BAR 사용 품번은 type 1로 설정
+                    to_do_list.appendleft(job(item_numbers[n], cycle_time_avgs[item_numbers[n]], 1, size, quantity))   # HEX BAR 사용 품번은 type 1로 설정
                     break
     return 0
 
@@ -110,7 +111,7 @@ def assign(CNCs, to_do_list):  #CNC에 job들을 분배하는 함수
     for a in range(len(to_do_list)):
         assignment = to_do_list.pop()
         selected_CNCs = []
-        last_assigned_cnc = classes.CNC()
+        last_assigned_cnc = CNC()
 
         for c in CNCs:
             if (float(c.getGround()) <= float(assignment.getSize()) < float(c.getCeiling())) \
