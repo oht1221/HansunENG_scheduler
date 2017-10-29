@@ -30,19 +30,19 @@ class CNC:
         print('\n')
 
     def enQ(self, *element):
-        if (type(element[0]) is job):
+        if (type(element[0]) is Job):
             self.jobQ.appendleft(element[0])
             self.update_timeLeft(element[0])
 
-        if (type(element[0]) is component):
+        if (type(element[0]) is Component):
             self.jobQ.appendleft(element[0])
             self.update_timeLeft(element[0])
 
     def deQ(self):
         self.jobQ.pop()
 
-    def update_timeLeft(self, *element):
-        self.timeLeft += (element[0]).getTime()
+    def update_timeLeft(self, element):
+        self.timeLeft += element.getTime()
 
     def get_jobQ(self):
         return self.jobQ
@@ -69,3 +69,10 @@ class CNC:
             c = j.getComponent[i]
             if not c.ifDone():
                 return c
+
+    def update_due(self):
+        for job in self.jobQ:
+            job.update_due()
+
+    def on_time(self, assignment):
+        return (assignment.getDue() - self.get_timeLeft() + assignment.getTime() >= 0)

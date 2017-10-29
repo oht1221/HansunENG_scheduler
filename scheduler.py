@@ -1,7 +1,6 @@
 from cnc import *
 from job import *
 import xlrd
-from collections import deque
 import random
 import numpy as np
 
@@ -93,7 +92,7 @@ def make_to_do_list(to_do_list, input, item_numbers, cycle_time_avgs, how_many):
             row = worksheet1.row_values(j)
             if str(row[4]) == item_numbers[n]:
                 size = str(row[9])
-                to_do_list.appendleft(job(item_numbers[n], cycle_time_avgs[item_numbers[n]], 0, size, quantity))  # 단조 사용 품번은 type 0으로 설정
+                to_do_list.appendleft(Job(item_numbers[n], cycle_time_avgs[item_numbers[n]], 0, size, quantity))  # 단조 사용 품번은 type 0으로 설정
                 flag = 1 #단조 사용품번에서 찾았으면  flag를 설정해서 다음 if문(HEX BAR 품번 찾는)을 무시하도록 함
                 break
 
@@ -102,7 +101,7 @@ def make_to_do_list(to_do_list, input, item_numbers, cycle_time_avgs, how_many):
                 row = worksheet2.row_values(j)
                 if str(row[4]) == item_numbers[n]:
                     size = str(row[9])
-                    to_do_list.appendleft(job(item_numbers[n], cycle_time_avgs[item_numbers[n]], 1, size, quantity))   # HEX BAR 사용 품번은 type 1로 설정
+                    to_do_list.appendleft(Job(item_numbers[n], cycle_time_avgs[item_numbers[n]], 1, size, quantity))   # HEX BAR 사용 품번은 type 1로 설정
                     break
     return 0
 
@@ -115,21 +114,42 @@ def assign(CNCs, to_do_list):  #CNC에 job들을 분배하는 함수
 
         for c in CNCs:
             if (float(c.getGround()) <= float(assignment.getSize()) < float(c.getCeiling())) \
-                    and (c.getShape() == assignment.getType()):  #size 맞는 CNC는 모두 찾음
+                    and (c.getShape() == assignment.getType()) and c.on_time(assignment):  #size 맞는 CNC는 모두 찾음
                 selected_CNCs.append(c)
 
+        if(not selected_CNCs): #조건에 맞는 cnc가 없으면
+                to_do_list.insert(0, assignment)
+                last_assigned_cnc = False
+                print("a new job(%s) can not be asggined\n----------------------------------"
+                      "------------------------------------------" % assignment.getNumber())
+                continue
+                #return False
 
-        if len(selected_CNCs) == 1: #cnc 1개만 size가 맞으면
-            selected_CNCs[0].enQ(assignment)
-
-        elif len(selected_CNCs) > 1: #복수개이면
-            timeLefts = [c.get_timeLeft() for c in selected_CNCs]
+        elif (selected_CNCs):
+            timeLefts =[c.get_timeLeft() for c in selected_CNCs]
             minValue = min(timeLefts)
             minIndex = timeLefts.index(minValue)
-            #print("max index is : ", minIndex)
             cnc = selected_CNCs[minIndex]
             last_assigned_cnc = cnc
             cnc.enQ(assignment)
+            print("a new job(%s) asggined to CNC #(%s)!\n--------------------------"
+                  "--------------------------------------------------" % (assignment.getNumber(), cnc.getNumber()))
+
+
+
+
+        ''' if len(selected_CNCs) == 1: #cnc 1개만 size가 맞으면
+               if(on_time(assignment, selected_CNCs[0])):
+                selected_CNCs[0].enQ(assignment)
+            else:
+                return False
+        elif len(selected_CNCs) > 1: #복수개이면
+            for i in range(len(selected_CNCs)):
+                selected_CNCs[0].enQ(assignment)
+            else:
+                return False'''
+
+            #print("max index is : ", minIndex)
 
     return last_assigned_cnc
 
@@ -142,7 +162,7 @@ def update(CNCs, unitTime):
         try:
             job = c.get_jobQ()[-1]
         except IndexError as e:
-            print(e)
+            #print(e)
             continue
         for i in range(len(job.getSeries())):
             component = job.getComponent(i)
@@ -152,4 +172,3 @@ def update(CNCs, unitTime):
             if(i == len(job.getSeries()) - 1):  ##마지막 콤포넌트까지 모두 done이면
                 if(job.ifAllDone()): #job의 함수를 통해 한번더 검사하고
                     c.deQ() #job을 jobQ에서 뺀다.
-

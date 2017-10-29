@@ -2,18 +2,23 @@ from collections import deque
 import random
 import numpy as np
 
-class job:
+class Job:
     def __init__(self, number, time, type, size, quantity, due = 0):
         self.number = number
-        self.timeLeft = sum(time) * quantity
+        self.timeLeft = sum(time) * quantity + 1000 # 재셋팅 시간 1000 추가
         self.type = type
         self.size = size
         self.quantity = quantity
-        self.series = [component(time[i], self, quantity) for i in range(len(time))]
-        self.due  = sum(time) * quantity * random.choice(range(2, 6, 1))
+        self.series = []
+        self.series  = [Component(time[i], self, quantity) for i in range(len(time))]
+        self.due  = sum(time) * quantity * random.choice(range(5, 10, 1))
 
-        '''for i in size(time):
-            self.series.append(component(time[i], self, quantity)) '''
+    def ifAllDone(self):
+        return np.all([(self.getSeries())[i].ifDone() for i in range(len(self.getSeries()))])
+
+    def update_due(self):
+        self.due -= 1
+
     def getSeries(self):
         return self.series
 
@@ -33,22 +38,17 @@ class job:
     def getType(self):
         return self.type
 
-    def ifAllDone(self):
-        return np.all([ (self.getSeries())[i].ifDone() for i in range(len(self.getSeries())) ])
+    def getDue(self):
+        return self.due
 
-
-
-
-        #self.left = left #남은 작업량
-        #self.sequence = [0,0] #n차 가공 끝낸 것
-class component:
+class Component:
     def __init__(self, cycleTime, job, quantity):
         self.cycleTime = cycleTime
         self.done = False
         self.partOf = job
+        self.count = 0 #count가 cycletime 만큼 올라가면 제품 하나를 완성했다고 가정
         self.quantity = quantity
         self.timeLeft = cycleTime * quantity
-        self.count = 0 #count가 cycletime 만큼 올라가면 제품 하나를 완성했다고 가정
 
     def spendTime(self, unitTime):
         self.timeLeft = self.timeLeft - unitTime
@@ -76,3 +76,15 @@ class component:
 
     def setTime(self, time):
         self.timeLeft = time
+
+"""
+class NormalCompoenet(Component):
+    def __init__(self, cycleTime, job, quantity):
+        super().__init__(cycleTime, job)
+        self.quantity = quantity
+        self.timeLeft = cycleTime * quantity
+
+class ReplacementComponent(Component):
+    def __init__(self, cycleTime, job):
+        super().__init__(cycleTime, job)
+"""
