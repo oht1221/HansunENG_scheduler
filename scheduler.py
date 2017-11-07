@@ -3,6 +3,7 @@ from job import *
 import xlrd
 import random
 import numpy as np
+from itertools import permutations
 
 def read_CNCs(input, CNCs):
     workbook = xlrd.open_workbook(input)
@@ -75,7 +76,7 @@ def calculate_cycle_time_avgs(cycle_time_avgs, input, item_numbers):
 
     return 0
 
-def make_to_do_list(to_do_list, input, item_numbers, cycle_time_avgs, how_many):
+def make_job_pool(job_pool, input, item_numbers, cycle_time_avgs, how_many):
 
     workbook = xlrd.open_workbook(input)
     worksheet1 = workbook.sheet_by_name("단조 사용 품번")
@@ -92,7 +93,7 @@ def make_to_do_list(to_do_list, input, item_numbers, cycle_time_avgs, how_many):
             row = worksheet1.row_values(j)
             if str(row[4]) == item_numbers[n]:
                 size = str(row[9])
-                to_do_list.appendleft(Job(item_numbers[n], cycle_time_avgs[item_numbers[n]], 0, size, quantity))  # 단조 사용 품번은 type 0으로 설정
+                job_pool.appendleft(Job(item_numbers[n], cycle_time_avgs[item_numbers[n]], 0, size, quantity))  # 단조 사용 품번은 type 0으로 설정
                 flag = 1 #단조 사용품번에서 찾았으면  flag를 설정해서 다음 if문(HEX BAR 품번 찾는)을 무시하도록 함
                 break
 
@@ -101,14 +102,14 @@ def make_to_do_list(to_do_list, input, item_numbers, cycle_time_avgs, how_many):
                 row = worksheet2.row_values(j)
                 if str(row[4]) == item_numbers[n]:
                     size = str(row[9])
-                    to_do_list.appendleft(Job(item_numbers[n], cycle_time_avgs[item_numbers[n]], 1, size, quantity))   # HEX BAR 사용 품번은 type 1로 설정
+                    job_pool.appendleft(Job(item_numbers[n], cycle_time_avgs[item_numbers[n]], 1, size, quantity))   # HEX BAR 사용 품번은 type 1로 설정
                     break
     return 0
 
 
-def assign(CNCs, to_do_list):  #CNC에 job들을 분배하는 함수
-    for a in range(len(to_do_list)):
-        assignment = to_do_list.pop()
+def assign(CNCs, job_pool):  #CNC에 job들을 분배하는 함수
+    '''for a in range(len(job_pool)):
+        assignment = job_pool.pop()
         selected_CNCs = []
         last_assigned_cnc = CNC()
 
@@ -118,7 +119,7 @@ def assign(CNCs, to_do_list):  #CNC에 job들을 분배하는 함수
                 selected_CNCs.append(c)
 
         if(not selected_CNCs): #조건에 맞는 cnc가 없으면
-                to_do_list.insert(0, assignment)
+                job_pool.insert(0, assignment)
                 last_assigned_cnc = False
                 print("a new job(%s) can not be asggined\n----------------------------------"
                       "------------------------------------------" % assignment.getNumber())
@@ -134,24 +135,23 @@ def assign(CNCs, to_do_list):  #CNC에 job들을 분배하는 함수
             cnc.enQ(assignment)
             print("a new job(%s) asggined to CNC #(%s)!\n--------------------------"
                   "--------------------------------------------------" % (assignment.getNumber(), cnc.getNumber()))
+    return last_assigned_cnc'''
 
+    normPool = []
+    hexPool = []
 
+    for i,assignment in enumerate(job_pool):
+        if assignment.getType() == 0:
+            normPool.append(assignment)
+            del job_pool[i]
 
+        elif assignment.getType() == 1:
+            hexPool.append(assignment)
+            del job_pool[i]
 
-        ''' if len(selected_CNCs) == 1: #cnc 1개만 size가 맞으면
-               if(on_time(assignment, selected_CNCs[0])):
-                selected_CNCs[0].enQ(assignment)
-            else:
-                return False
-        elif len(selected_CNCs) > 1: #복수개이면
-            for i in range(len(selected_CNCs)):
-                selected_CNCs[0].enQ(assignment)
-            else:
-                return False'''
+    normPool = permutations(normPool)
+    hexPool = permutations(hexPool)
 
-            #print("max index is : ", minIndex)
-
-    return last_assigned_cnc
 
 def newJobs():
     return np.random.choice([0,1], 1, p = [0.9995, 0.0005])
