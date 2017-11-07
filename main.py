@@ -47,13 +47,7 @@ while(1):
     scheduler.update(CNCs, unitTime = 1)
     if(scheduler.newJobs()):
         scheduler.make_to_do_list(TO_DO_LIST, './hansun2.xlsx', ITEM_NUMBERS, CYCLE_TIME_AVGS, 1)
-     #   number = TO_DO_LIST[0].getNumber()
-        cnc = scheduler.assign(CNCs, TO_DO_LIST)
-    #    if(cnc):
-     #       print("a new job(%s) asggined to CNC #(%s)!\n----------------------------------------------------------------------------" % (
-     #           number, cnc.getNumber()))
-     #   elif(not cnc):
-     #       print("a new job(%s) can not be asggined\n----------------------------------------------------------------------------" % number)
+        scheduler.assign(CNCs, TO_DO_LIST)
 
     i = (i + 1) % 1000
 
