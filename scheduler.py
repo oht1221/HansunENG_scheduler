@@ -107,7 +107,7 @@ def make_job_pool(job_pool, input, item_numbers, cycle_time_avgs, how_many):
 
 
 def assign(CNCs, job_pool):  #CNC에 job들을 분배하는 함수
-    for a in range(len(job_pool)):
+    '''for a in range(len(job_pool)):
         assignment = job_pool.pop()
         selected_CNCs = []
         last_assigned_cnc = CNC()
@@ -134,24 +134,9 @@ def assign(CNCs, job_pool):  #CNC에 job들을 분배하는 함수
             cnc.enQ(assignment)
             print("a new job(%s) asggined to CNC #(%s)!\n--------------------------"
                   "--------------------------------------------------" % (assignment.getNumber(), cnc.getNumber()))
+    return last_assigned_cnc'''
 
 
-
-
-        ''' if len(selected_CNCs) == 1: #cnc 1개만 size가 맞으면
-               if(on_time(assignment, selected_CNCs[0])):
-                selected_CNCs[0].enQ(assignment)
-            else:
-                return False
-        elif len(selected_CNCs) > 1: #복수개이면
-            for i in range(len(selected_CNCs)):
-                selected_CNCs[0].enQ(assignment)
-            else:
-                return False'''
-
-            #print("max index is : ", minIndex)
-
-    return last_assigned_cnc
 
 def newJobs():
     return np.random.choice([0,1], 1, p = [0.9995, 0.0005])
