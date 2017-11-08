@@ -148,7 +148,7 @@ def assign(CNCs, job_pool):  #CNC에 job들을 분배하는 함수
     normCNCs = list(filter(lambda x : x.getShape() == 0, CNCs))
     hexCNCs = list(filter(lambda x : x.getShape() == 1, CNCs))
 
-    
+
 
 def newJobs():
     return np.random.choice([0,1], 1, p = [0.9995, 0.0005])
