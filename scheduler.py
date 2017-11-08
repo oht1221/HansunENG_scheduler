@@ -139,15 +139,49 @@ def assign(CNCs, job_pool):  #CNC에 job들을 분배하는 함수
     return last_assigned_cnc'''
 
     avgTime = sum(list(job.getTime() for job in job_pool)) / len(job_pool)
-
     normPool = []
     hexPool = []
     splitPool(job_pool,normPool,hexPool)
     normPool = permutations(normPool,len(normPool))
     hexPool = permutations(hexPool,len(hexPool))
+
     normCNCs = list(filter(lambda x : x.getShape() == 0, CNCs))
     hexCNCs = list(filter(lambda x : x.getShape() == 1, CNCs))
+    sortedNormPool = sorted(normPool, key = lambda j : j.getDue())
+    sortedHexPool = sorted(hexPool, key=lambda j: j.getDue())
 
+    for i,j in enumerate(sortedNormPool):
+        selected_CNCs = []
+        for c in normCNCs:
+            if (float(c.getGround()) <= float(j.getSize()) < float(c.getCeiling())):  # size 맞는 CNC는 모두 찾음
+                selected_CNCs.append(c)
+
+        timeLefts = [c.get_timeLeft() for c in selected_CNCs]
+        minValue = min(timeLefts)
+        minIndex = timeLefts.index(minValue)
+        cnc = selected_CNCs[minIndex]
+        cnc.enQ(j)
+        print("a new job(%s) asggined to CNC #(%s)!" % (j.getNumber(), cnc.getNumber()))
+        if  cnc.on_time(j) < 0:
+            print("(%d more time units needed to meet duetime)\n")
+        print("----------------------------------------------------------------------------\n")
+
+
+    for i,j in enumerate(sortedHexPool):
+        selected_CNCs = []
+        for c in hexCNCs:
+            if (float(c.getGround()) <= float(j.getSize()) < float(c.getCeiling())):  # size 맞는 CNC는 모두 찾음
+                selected_CNCs.append(c)
+
+        timeLefts = [c.get_timeLeft() for c in selected_CNCs]
+        minValue = min(timeLefts)
+        minIndex = timeLefts.index(minValue)
+        cnc = selected_CNCs[minIndex]
+        cnc.enQ(j)
+        print("a new job(%s) asggined to CNC #(%s)!" % (j.getNumber(), cnc.getNumber()))
+        if  cnc.on_time(j) < 0:
+            print("(%d more time units needed to meet duetime)\n")
+        print("----------------------------------------------------------------------------\n")
 
 
 def newJobs():
@@ -169,15 +203,14 @@ def update(CNCs, unitTime):
             if(i == len(job.getSeries()) - 1):  ##마지막 콤포넌트까지 모두 done이면
                 if(job.ifAllDone()): #job의 함수를 통해 한번더 검사하고
                     c.deQ() #job을 jobQ에서 뺀다.
+
 def splitPool(job_pool, normPool, hexPool):
 
     for i,assignment in enumerate(job_pool):
         if assignment.getType() == 0:
             normPool.append(assignment)
-            del job_pool[i]
 
         elif assignment.getType() == 1:
             hexPool.append(assignment)
-            del job_pool[i]
 
     return 0
