@@ -12,7 +12,7 @@ CYCLE_TIME_AVGS = {}
 
 scheduler.read_CNCs('./hansun2.xlsx', CNCs)
 scheduler.calculate_cycle_time_avgs(CYCLE_TIME_AVGS, './hansun2.xlsx', ITEM_NUMBERS)
-scheduler.make_to_do_list(JOB_POOL, './hansun2.xlsx', ITEM_NUMBERS, CYCLE_TIME_AVGS, 200)  #시작할 때 200개 생성
+scheduler.make_job_pool(JOB_POOL, './hansun2.xlsx', ITEM_NUMBERS, CYCLE_TIME_AVGS, 200)  #시작할 때 200개 생성
 
 for j in JOB_POOL:
     print(j.getNumber())

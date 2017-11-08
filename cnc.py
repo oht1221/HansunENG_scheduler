@@ -75,4 +75,4 @@ class CNC:
             job.update_due()
 
     def on_time(self, assignment):
-        return (assignment.getDue() - self.get_timeLeft() + assignment.getTime() >= 0)
+        return assignment.getDue() - self.get_timeLeft() + assignment.getTime()
