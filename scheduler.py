@@ -108,49 +108,23 @@ def make_job_pool(job_pool, input, item_numbers, cycle_time_avgs, how_many):
 
 
 def assign(CNCs, job_pool):  #CNC에 job들을 분배하는 함수
-    '''for a in range(len(job_pool)):
-        assignment = job_pool.pop()
-        selected_CNCs = []
-        last_assigned_cnc = CNC()
-
-        for c in CNCs:
-            if (float(c.getGround()) <= float(assignment.getSize()) < float(c.getCeiling())) \
-                    and (c.getShape() == assignment.getType()) and c.on_time(assignment):  #size 맞는 CNC는 모두 찾음
-                selected_CNCs.append(c)
-
-        if(not selected_CNCs): #조건에 맞는 cnc가 없으면
-                job_pool.insert(0, assignment)
-                last_assigned_cnc = False
-                print("a new job(%s) can not be asggined\n----------------------------------"
-                      "------------------------------------------" % assignment.getNumber())
-                continue
-                #return False
-
-        elif (selected_CNCs):
-            timeLefts =[c.get_timeLeft() for c in selected_CNCs]
-            minValue = min(timeLefts)
-            minIndex = timeLefts.index(minValue)
-            cnc = selected_CNCs[minIndex]
-            last_assigned_cnc = cnc
-            cnc.enQ(assignment)
-            print("a new job(%s) asggined to CNC #(%s)!\n--------------------------"
-                  "--------------------------------------------------" % (assignment.getNumber(), cnc.getNumber()))
-
-    return last_assigned_cnc'''
 
     avgTime = sum(list(job.getTime() for job in job_pool)) / len(job_pool)
     normPool = []
     hexPool = []
     splitPool(job_pool,normPool,hexPool)
-    normPool = permutations(normPool,len(normPool))
-    hexPool = permutations(hexPool,len(hexPool))
-
+    normPool.sort(key = lambda x : x.getDue())
+    hexPool.sort(key=lambda x: x.getDue())
+    #normPool = permutations(normPool,len(normPool))
+    #hexPool = permutations(hexPool,len(hexPool))
     normCNCs = list(filter(lambda x : x.getShape() == 0, CNCs))
     hexCNCs = list(filter(lambda x : x.getShape() == 1, CNCs))
-    sortedNormPool = sorted(normPool, key = lambda j : j.getDue())
-    sortedHexPool = sorted(hexPool, key=lambda j: j.getDue())
+   # sortedNormPool = sorted(normPool, key = lambda j : j.getDue())
+    #sortedHexPool = sorted(hexPool, key = lambda j: j.getDue())
 
-    for i,j in enumerate(sortedNormPool):
+
+
+    for i,j in enumerate(normPool):
         selected_CNCs = []
         for c in normCNCs:
             if (float(c.getGround()) <= float(j.getSize()) < float(c.getCeiling())):  # size 맞는 CNC는 모두 찾음
@@ -167,7 +141,7 @@ def assign(CNCs, job_pool):  #CNC에 job들을 분배하는 함수
         print("----------------------------------------------------------------------------\n")
 
 
-    for i,j in enumerate(sortedHexPool):
+    for i,j in enumerate(hexPool):
         selected_CNCs = []
         for c in hexCNCs:
             if (float(c.getGround()) <= float(j.getSize()) < float(c.getCeiling())):  # size 맞는 CNC는 모두 찾음
@@ -179,8 +153,9 @@ def assign(CNCs, job_pool):  #CNC에 job들을 분배하는 함수
         cnc = selected_CNCs[minIndex]
         cnc.enQ(j)
         print("a new job(%s) asggined to CNC #(%s)!" % (j.getNumber(), cnc.getNumber()))
-        if  cnc.on_time(j) < 0:
-            print("(%d more time units needed to meet duetime)\n")
+        diff = cnc.on_time(j)
+        if diff < 0:
+            print("(%d more time units needed to meet duetime)\n" %((-1)*diff))
         print("----------------------------------------------------------------------------\n")
 
 

@@ -12,19 +12,15 @@ CYCLE_TIME_AVGS = {}
 
 scheduler.read_CNCs('./hansun2.xlsx', CNCs)
 scheduler.calculate_cycle_time_avgs(CYCLE_TIME_AVGS, './hansun2.xlsx', ITEM_NUMBERS)
-scheduler.make_job_pool(JOB_POOL, './hansun2.xlsx', ITEM_NUMBERS, CYCLE_TIME_AVGS, 200)  #시작할 때 200개 생성
+scheduler.make_job_pool(JOB_POOL, './hansun2.xlsx', ITEM_NUMBERS, CYCLE_TIME_AVGS, 150)  #시작할 때 200개 생성
 
-for j in JOB_POOL:
+'''for j in JOB_POOL:
     print(j.getNumber())
     print(j.getTime())
     print(j.getSize())
-    print('\n')
+    print('\n')'''
 
 scheduler.assign(CNCs, JOB_POOL)
-'''for 
-c in CNCs:
-c.print_info()'''
-print(CYCLE_TIME_AVGS ,'\n')
 i = 0
 while(1):
 
@@ -33,12 +29,12 @@ while(1):
             c.print_info()
             c.print_state()
 
-        for j in JOB_POOL:
+        '''for j in JOB_POOL:
             print(j.getNumber())
             print(j.getTime())
             print(j.getType())
             print(j.getSize())
-            print('\n')
+            print('\n')'''
         print("----------------------------------------------------------------------------")
         time.sleep(0.5)
 
