@@ -12,6 +12,8 @@ class Job:
         self.series = []
         self.series  = [Component(time[i], self, quantity) for i in range(len(time))]
         self.due  = sum(time) * quantity * random.choice(range(5, 10, 1))
+        self.cnc = None
+        self.msg = None
 
     def ifAllDone(self):
         return np.all([(self.getSeries())[i].ifDone() for i in range(len(self.getSeries()))])
@@ -40,6 +42,12 @@ class Job:
 
     def getDue(self):
         return self.due
+
+    def assignedTo(self, cnc):
+        self.cnc = cnc
+
+    def setMsg(self, msg):
+        self.msg = msg
 
 class Component:
     def __init__(self, cycleTime, job, quantity):

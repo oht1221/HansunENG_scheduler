@@ -20,23 +20,29 @@ class CNC:
         i = 0
         for j in self.jobQ:
             i = (i + 1) % 5
+            print(end='|  ')
             print(j.getNumber(), end=' (')
             for n in range(len(j.getSeries())):
                 print(j.getComponent(n).ifDone(), end = ' ')
-            print(end = ')')
+            print(end = ') ')
+            print (j.getTime(), end = '  |')
             if(i == 0): print(' ')
         print(' ')
         print(self.get_timeLeft())
         print('\n')
 
-    def enQ(self, *element):
-        if (type(element[0]) is Job):
+    def enQ(self, *element, in_progress):
+        if len(self.get_jobQ()) == 0:
+            in_progress.appendleft(element[0])
+        if type(element[0]) is Job:
             self.jobQ.appendleft(element[0])
             self.update_timeLeft(element[0])
 
-        if (type(element[0]) is Component):
+        if type(element[0]) is Component:
             self.jobQ.appendleft(element[0])
             self.update_timeLeft(element[0])
+
+
 
     def deQ(self):
         self.jobQ.pop()

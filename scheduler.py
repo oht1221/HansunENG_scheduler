@@ -106,10 +106,99 @@ def make_job_pool(job_pool, input, item_numbers, cycle_time_avgs, how_many):
                     break
     return 0
 
+def schedule(CNCs, job_pool, machines):
+    total_delayed_time = 0
+    total_delayed_jobs_count = 0
+    last_job_execution = 0
+    for cnc in CNCs:
+        machines[cnc.getNumber()] = list()
 
-def assign(CNCs, job_pool):  #CNC에 job들을 분배하는 함수
+    avg_time = sum(list(job.getTime() for job in job_pool)) / len(job_pool)
 
-    avgTime = sum(list(job.getTime() for job in job_pool)) / len(job_pool)
+    normPool = list()
+    hexPool = list()
+    splitPool(job_pool, normPool, hexPool)
+    normPool.sort(key=lambda x: x.getDue())
+    hexPool.sort(key=lambda x: x.getDue())
+    # normPool = permutations(normPool,len(normPool))
+    # hexPool = permutations(hexPool,len(hexPool))
+    normCNCs = list(filter(lambda x: x.getShape() == 0, CNCs))
+    hexCNCs = list(filter(lambda x: x.getShape() == 1, CNCs))
+    # sortedNormPool = sorted(normPool, key = lambda j : j.getDue())
+    # sortedHexPool = sorted(hexPool, key = lambda j: j.getDue())
+
+
+
+    for i, j in enumerate(normPool):
+
+        selected_CNCs = []
+        for c in normCNCs:
+            if (float(c.getGround()) <= float(j.getSize()) < float(c.getCeiling())):  # size 맞는 CNC는 모두 찾음
+                selected_CNCs.append(c)
+
+        timeLefts = [sum([j.getTime() for j in machines[c.getNumber()]]) for c in selected_CNCs]
+        minValue = min(timeLefts)
+        minIndex = timeLefts.index(minValue)
+        cnc = selected_CNCs[minIndex]
+        #cnc.enQ(j, in_progress=in_progress)
+        (machines[cnc.getNumber()]).append(j)
+        j.assignedTo(cnc)
+        #ready_pool.appendleft(j)
+        #job_pool.remove(j)
+        notice = "a new job(" + str(j.getNumber()) + ") asggined to CNC #(" + \
+                 str(cnc.getNumber()) + ")!\n"
+
+        time_left_of_cnc = sum([j.getTime() for j in machines[cnc.getNumber()]])
+        if last_job_execution < time_left_of_cnc:
+            last_job_execution = time_left_of_cnc
+
+        diff = j.getDue() - (time_left_of_cnc + j.getTime())
+        if diff < 0:
+            notice += "(" + str((-1) * diff) + "more time units needed to meet duetime)\n"
+            total_delayed_jobs_count += 1
+            total_delayed_time += (-1) * diff
+        j.setMsg(notice)
+
+    for i, j in enumerate(hexPool):
+        selected_CNCs = []
+        for c in hexCNCs:
+            if (float(c.getGround()) <= float(j.getSize()) < float(c.getCeiling())):  # size 맞는 CNC는 모두 찾음
+                selected_CNCs.append(c)
+
+                timeLefts = [sum([j.getTime() for j in machines[c.getNumber()]]) for c in selected_CNCs]
+        minValue = min(timeLefts)
+        minIndex = timeLefts.index(minValue)
+        cnc = selected_CNCs[minIndex]
+        #cnc.enQ(j, in_progress=in_progress)
+        (machines[cnc.getNumber()]).append(j)
+        j.assignedTo(cnc)
+        #ready_pool.appendleft(j)
+        #job_pool.remove(j)
+        notice = "a new job(" + str(j.getNumber()) + ") asggined to CNC #(" + \
+                 str(cnc.getNumber()) + ")!\n"
+
+        time_left_of_cnc = sum([j.getTime() for j in machines[cnc.getNumber()]])
+        if last_job_execution < time_left_of_cnc:
+            last_job_execution = time_left_of_cnc
+
+        diff = j.getDue() - (time_left_of_cnc + j.getTime())
+        if diff < 0:
+            notice += "(" + str((-1) * diff) + "more time units needed to meet duetime)\n"
+            total_delayed_jobs_count += 1
+            total_delayed_time += (-1) * diff
+        j.setMsg(notice)
+
+    msg = [total_delayed_time, total_delayed_jobs_count, last_job_execution, machines]
+    return msg
+
+
+def assign(CNCs, job_pool, ready_pool, in_progress):  #CNC에 job들을 분배하는 함수
+
+    total_delayed_time = 0
+    total_delayed_jobs_count = 0
+    last_job_execution = 0
+    avg_time = sum(list(job.getTime() for job in job_pool)) / len(job_pool)
+
     normPool = []
     hexPool = []
     splitPool(job_pool,normPool,hexPool)
@@ -125,7 +214,9 @@ def assign(CNCs, job_pool):  #CNC에 job들을 분배하는 함수
 
 
     for i,j in enumerate(normPool):
+
         selected_CNCs = []
+
         for c in normCNCs:
             if (float(c.getGround()) <= float(j.getSize()) < float(c.getCeiling())):  # size 맞는 CNC는 모두 찾음
                 selected_CNCs.append(c)
@@ -134,11 +225,21 @@ def assign(CNCs, job_pool):  #CNC에 job들을 분배하는 함수
         minValue = min(timeLefts)
         minIndex = timeLefts.index(minValue)
         cnc = selected_CNCs[minIndex]
-        cnc.enQ(j)
-        print("a new job(%s) asggined to CNC #(%s)!" % (j.getNumber(), cnc.getNumber()))
-        if  cnc.on_time(j) < 0:
-            print("(%d more time units needed to meet duetime)\n")
-        print("----------------------------------------------------------------------------\n")
+        cnc.enQ(j, in_progress = in_progress)
+        j.assignedTo(cnc)
+        ready_pool.appendleft(j)
+        job_pool.remove(j)
+        notice = "a new job(" + str(j.getNumber()) + ") asggined to CNC #(" + \
+                 str(cnc.getNumber()) + ")!\n"
+
+        if last_job_execution < cnc.get_timeLeft():
+            last_job_execution = cnc.get_timeLeft()
+        diff = cnc.on_time(j)
+        if  diff < 0:
+            notice += "(" + str((-1)*diff) + "more time units needed to meet duetime)\n"
+            total_delayed_jobs_count += 1
+            total_delayed_time += (-1)*diff
+        j.setMsg(notice)
 
 
     for i,j in enumerate(hexPool):
@@ -151,19 +252,29 @@ def assign(CNCs, job_pool):  #CNC에 job들을 분배하는 함수
         minValue = min(timeLefts)
         minIndex = timeLefts.index(minValue)
         cnc = selected_CNCs[minIndex]
-        cnc.enQ(j)
-        print("a new job(%s) asggined to CNC #(%s)!" % (j.getNumber(), cnc.getNumber()))
+        cnc.enQ(j, in_progress=in_progress)
+        ready_pool.appendleft(j)
+        job_pool.remove(j)
+        notice = "a new job(" + str(j.getNumber()) + ") asggined to CNC #(" + \
+                 str(cnc.getNumber()) + ")!\n"
+
+        if last_job_execution < cnc.get_timeLeft():
+            last_job_execution = cnc.get_timeLeft()
         diff = cnc.on_time(j)
         if diff < 0:
-            print("(%d more time units needed to meet duetime)\n" %((-1)*diff))
-        print("----------------------------------------------------------------------------\n")
+            notice += "(" + str((-1) * diff) + "more time units needed to meet duetime)\n"
+            total_delayed_jobs_count += 1
+            total_delayed_time += (-1) * diff
+        j.setMsg(notice)
 
+    msg = [total_delayed_time, total_delayed_jobs_count, last_job_execution]
+    return msg
 
 def newJobs():
     return np.random.choice([0,1], 1, p = [0.9995, 0.0005])
 
 
-def update(CNCs, unitTime):
+def update(CNCs, unitTime, ready_pool, in_progress):
     for c in CNCs:
         try:
             job = c.get_jobQ()[-1]
@@ -178,6 +289,8 @@ def update(CNCs, unitTime):
             if(i == len(job.getSeries()) - 1):  ##마지막 콤포넌트까지 모두 done이면
                 if(job.ifAllDone()): #job의 함수를 통해 한번더 검사하고
                     c.deQ() #job을 jobQ에서 뺀다.
+                    in_progress.appendleft((c.get_jobQ())[-1]) #inprogress에 넣고
+                    ready_pool.remove((c.get_jobQ())[-1]) #reaypool에서는 뺀다
 
 def splitPool(job_pool, normPool, hexPool):
 
@@ -189,3 +302,4 @@ def splitPool(job_pool, normPool, hexPool):
             hexPool.append(assignment)
 
     return 0
+
