@@ -21,10 +21,10 @@ class CNC:
         for j in self.jobQ:
             i = (i + 1) % 5
             print(end='|  ')
-            print(j.getNumber(), end=' (')
-            for n in range(len(j.getSeries())):
-                print(j.getComponent(n).ifDone(), end = ' ')
-            print(end = ') ')
+            #print(j.getNumber(), end=' (')
+            #for n in range(len(j.getSeries())):
+            #    print(j.getComponent(n).ifDone(), end = ' ')
+            #print(end = ') ')
             print (j.getTime(), end = '  |')
             if(i == 0): print(' ')
         print(' ')

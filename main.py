@@ -6,7 +6,7 @@ from collections import deque
 CNCs = []
 ITEM_NUMBERS = ['00015604', '00015606', '00015608', '00015609', '00015610', '00057515', '00015629', '00032905', '00015875','00015991',
                 '00016144', '00015914', '00016138', '00015921', '00016034', '00016145', '00016036', '00016146', '00016044', '00015887',
-                '00016000', '00015935', '00016048', '00015845', '00015958', ] #품번
+                '00016000', '00015935', '00016048', '00015845', '00015958', ]
 JOB_POOL = deque()
 READY_POOL = deque()
 IN_PROGRESS = deque()
@@ -14,7 +14,7 @@ CYCLE_TIME_AVGS = {}
 
 scheduler.read_CNCs('./hansun2.xlsx', CNCs)
 scheduler.calculate_cycle_time_avgs(CYCLE_TIME_AVGS, './hansun2.xlsx', ITEM_NUMBERS)
-scheduler.make_job_pool(JOB_POOL, './hansun2.xlsx', ITEM_NUMBERS, CYCLE_TIME_AVGS, 150)  #시작할 때 200개 생성
+scheduler.make_job_pool(JOB_POOL, './hansun2.xlsx', ITEM_NUMBERS, CYCLE_TIME_AVGS, 150)
 
 '''for j in JOB_POOL:
     print(j.getNumber())
