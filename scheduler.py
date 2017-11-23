@@ -118,8 +118,10 @@ def schedule(CNCs, job_pool, machines):
     normPool = list()
     hexPool = list()
     splitPool(job_pool, normPool, hexPool)
-    normPool.sort(key=lambda x: x.getDue())
-    hexPool.sort(key=lambda x: x.getDue())
+    #normPool.sort(key=lambda x: x.getDue())
+    #hexPool.sort(key=lambda x: x.getDue())
+    normPool = permutation(normPool)
+    hexPool = permutation(hexPool)
     # normPool = permutations(normPool,len(normPool))
     # hexPool = permutations(hexPool,len(hexPool))
     normCNCs = list(filter(lambda x: x.getShape() == 0, CNCs))
@@ -303,3 +305,10 @@ def splitPool(job_pool, normPool, hexPool):
 
     return 0
 
+def permutation(pool):
+    per = list()
+    while(len(pool) != 0):
+        i = random.randrange(0, len(pool))
+        newElement =  pool.pop(i)
+        per.append(newElement)
+    return per
