@@ -1,5 +1,6 @@
 import time
 import scheduler
+import AccessDB
 from collections import deque
 
 
@@ -11,6 +12,9 @@ JOB_POOL = deque()
 READY_POOL = deque()
 IN_PROGRESS = deque()
 CYCLE_TIME_AVGS = {}
+
+AccessDB.AccessDB()
+
 
 scheduler.read_CNCs('./hansun2.xlsx', CNCs)
 scheduler.calculate_cycle_time_avgs(CYCLE_TIME_AVGS, './hansun2.xlsx', ITEM_NUMBERS)
@@ -78,7 +82,7 @@ while(1):
 
         for j in JOB_POOL:
             print(j.getNumber())
-            print(j.getTime())
+             print(j.getTime())
             print(j.getType())
             print(j.getSize())
             print('\n')
