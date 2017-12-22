@@ -15,16 +15,11 @@ CYCLE_TIME_AVGS = {}
 
 AccessDB.AccessDB()
 
-
+'''
 scheduler.read_CNCs('./hansun2.xlsx', CNCs)
 scheduler.calculate_cycle_time_avgs(CYCLE_TIME_AVGS, './hansun2.xlsx', ITEM_NUMBERS)
 scheduler.make_job_pool(JOB_POOL, './hansun2.xlsx', ITEM_NUMBERS, CYCLE_TIME_AVGS, 150)
 
-'''for j in JOB_POOL:
-    print(j.getNumber())
-    print(j.getTime())
-    print(j.getSize())
-    print('\n')'''
 while(1):
     machines= {}
     msg = scheduler.schedule(CNCs, JOB_POOL, machines)
@@ -48,16 +43,6 @@ while(1):
             if (i == 0): print(' ')
         print(' ')
         print('\n')
-    '''for c in CNCs:
-        c.print_info()
-        c.print_state()
-
-    for j in JOB_POOL:
-        print(j.getNumber())
-        print(j.getTime())
-        print(j.getType())
-        print(j.getSize())
-        print('\n')'''
 
     while(1):
         client = input("Do you want another schedule? (y/n) ")
@@ -72,6 +57,7 @@ while(1):
         continue
     if client == 'n':
         break
+        '''
 '''i = 0
 while(1):
 

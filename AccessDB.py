@@ -135,7 +135,8 @@ declare @iaccunit char(3),
             )
     row = cursor.fetchone()
     while row:
-        print(row[0])
-        row = cursor.fetchone()
+        print(row[3], end = ' | ')
+        #print(row[4], end = ' | ')
+        #row = cursor.fetchone()
 
     return row
