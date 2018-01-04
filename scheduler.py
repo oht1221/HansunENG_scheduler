@@ -76,16 +76,17 @@ def make_job_pool(job_pool):
             continue
         Qty = row[5]
         Gubun = int(row[6])
-        search_cycle_time(cursor2, cycle_time, GoodCd, Gubun)
-        due_date = row[1]
-        print(due_date)
+        search_cycle_time(cursor2, cycle_time, GoodCd, Gubun, work_start, work_end, deli_start, deli_end)
+        due_date = row[2]
         due_date_seconds = time.mktime((int(due_date[0:4]), int(due_date[4:6]), int(due_date[6:8]), 12, 0, 0, 0, 0, 0)) # 정오 기준
-        print(due_date_seconds)
+        due_date_seconds = int(due_date_seconds)
         newJob = Job(GoodCd, time = cycle_time, type = Gubun, quantity = Qty, due = due_date_seconds, size = spec)
         job_pool.appendleft(newJob)
         row = cursor1.fetchone()
 
-def search_cycle_time(cursor, cycle_time, GoodCd, Gubun):
+    print("the total # of job : %d"%len(job_pool))
+
+def search_cycle_time(cursor, cycle_time, GoodCd, Gubun, work_start, work_end, deli_start, deli_end):
     flag1 = 0
     flag2 = 0
     if Gubun == 1:
@@ -106,8 +107,8 @@ def search_cycle_time(cursor, cycle_time, GoodCd, Gubun):
     				select  w.workno, /*, max(c.workdate) as workdate*/ w.DeliveryDate, w.GoodCd, w.OrderQty, i.Class3, i.Spec
     				from TWorkreport_Han_Eng w
     				inner join TGood i on w.Raw_Materialcd = i.GoodCd
-    				where w.workdate between '20171201' and '20171220'
-    				and w.DeliveryDate between '20171220' and '20171231'  
+    				where w.workdate between """ + work_start + """ and """ + work_end + """
+	                and w.DeliveryDate between """ + deli_start + """ and """ + deli_end + """ 
     				and w.PmsYn = 'N'
     				and w.ContractYn = '1'
     				and i.Class2 not in ('060002', '060006')
@@ -124,13 +125,13 @@ def search_cycle_time(cursor, cycle_time, GoodCd, Gubun):
     while(row):
         processcd = row[6].strip()
         if processcd == 'P1' and flag1 == 0:
-            cycle_time[0] = float(row[7])
+            cycle_time[0] = int(row[7])
             flag1 = 1
         elif processcd == 'P2' and flag2 == 0:
-            cycle_time[1] = float(row[7])
+            cycle_time[1] = int(row[7])
             flag2 = 1
         elif processcd == 'P3' and flag3 == 0:
-            cycle_time[2] = float(row[7])
+            cycle_time[2] = int(row[7])
             flag3 = 1
         if flag1 == 1 and flag2 == 1 and flag3 == 1:
             break
@@ -160,8 +161,11 @@ def schedule(CNCs, job_pool, machines):
     # sortedNormPool = sorted(normPool, key = lambda j : j.getDue())
     # sortedHexPool = sorted(hexPool, key = lambda j: j.getDue())
     standard = input("schedule starts on : ")
-    standard = (lambda x: int(time.time()) if 'now' else time.mktime((int(x[0:4]), int(x[4:6]), int(x[6:8]), 12, 0, 0, 0, 0, 0)))(standard)
+    standard = (lambda x: int(time.time()) if (x == 'now') else time.mktime((int(x[0:4]), int(x[4:6]), int(x[6:8]), 12, 0, 0, 0, 0, 0)))(standard)
     standard = int(standard)
+    print("----standard----")
+    print(standard)
+    print("----standard----")
     for i, j in enumerate(normPool):
 
         selected_CNCs = []
@@ -189,6 +193,8 @@ def schedule(CNCs, job_pool, machines):
             last_job_execution = time_left_of_cnc
 
         diff = j.getDue() - (time_left_of_cnc + j.getTime() + standard)
+        print('----------')
+        print(j.getDue())
         if diff < 0:
             notice += "(" + str((-1) * diff) + "more time units needed to meet duetime)\n"
             total_delayed_jobs_count += 1
@@ -218,6 +224,8 @@ def schedule(CNCs, job_pool, machines):
             last_job_execution = time_left_of_cnc
 
         diff = j.getDue() - (time_left_of_cnc + j.getTime() + standard)
+        print('----------')
+        print(j.getDue())
         if diff < 0:
             notice += "(" + str((-1) * diff) + "more time units needed to meet duetime)\n"
             total_delayed_jobs_count += 1

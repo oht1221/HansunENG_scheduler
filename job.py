@@ -11,7 +11,7 @@ class Job:
         self.quantity = quantity
         self.series = []
         self.series  = [Component(time[i], self, quantity) for i in range(len(time))]
-        self.due  = sum(time) * quantity * random.choice(range(5, 10, 1))
+        self.due  = due
         self.cnc = None
         self.msg = None
 
