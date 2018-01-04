@@ -159,8 +159,9 @@ def schedule(CNCs, job_pool, machines):
     hexCNCs = list(filter(lambda x: x.getShape() == 1, CNCs))
     # sortedNormPool = sorted(normPool, key = lambda j : j.getDue())
     # sortedHexPool = sorted(hexPool, key = lambda j: j.getDue())
-
-
+    standard = input("schedule starts on : ")
+    standard = (lambda x: int(time.time()) if 'now' else time.mktime((int(x[0:4]), int(x[4:6]), int(x[6:8]), 12, 0, 0, 0, 0, 0)))(standard)
+    standard = int(standard)
     for i, j in enumerate(normPool):
 
         selected_CNCs = []
@@ -187,7 +188,7 @@ def schedule(CNCs, job_pool, machines):
         if last_job_execution < time_left_of_cnc:
             last_job_execution = time_left_of_cnc
 
-        diff = j.getDue() - (time_left_of_cnc + j.getTime() + int(time.time()))
+        diff = j.getDue() - (time_left_of_cnc + j.getTime() + standard)
         if diff < 0:
             notice += "(" + str((-1) * diff) + "more time units needed to meet duetime)\n"
             total_delayed_jobs_count += 1
@@ -216,7 +217,7 @@ def schedule(CNCs, job_pool, machines):
         if last_job_execution < time_left_of_cnc:
             last_job_execution = time_left_of_cnc
 
-        diff = j.getDue() - (time_left_of_cnc + j.getTime() +  int(time.time()))
+        diff = j.getDue() - (time_left_of_cnc + j.getTime() + standard)
         if diff < 0:
             notice += "(" + str((-1) * diff) + "more time units needed to meet duetime)\n"
             total_delayed_jobs_count += 1
