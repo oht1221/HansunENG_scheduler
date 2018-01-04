@@ -3,9 +3,9 @@ import random
 import numpy as np
 
 class Job:
-    def __init__(self, number, time, type, size, quantity, due = 0):
+    def __init__(self, number, type, size, quantity, time = [0,0,0], due = 0):
         self.number = number
-        self.timeLeft = sum(time) * quantity + 1000 # 재셋팅 시간 1000 추가
+        self.timeLeft = sum(time) * quantity # 재셋팅 시간 1000 추가
         self.type = type
         self.size = size
         self.quantity = quantity

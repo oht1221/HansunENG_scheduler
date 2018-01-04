@@ -3,7 +3,9 @@ from job import *
 import xlrd
 import random
 import numpy as np
+import AccessDB
 from itertools import permutations
+import time
 
 def read_CNCs(input, CNCs):
     workbook = xlrd.open_workbook(input)
@@ -13,12 +15,12 @@ def read_CNCs(input, CNCs):
     n_cols = worksheet.ncols
     n_rows = worksheet.nrows
 
-    for i in (2, 3, 7, 9, 10, 11,17, 23): #1, 2, 6, 8, 10, 16, 22번 cnc
+    for i in range(2,41): #1, 2, 6, 8, 10, 16, 22번 cnc
         row = worksheet.row_values(i)
         number = str(row[1])
         if str(row[2]) == "2JAW":   #2JAW 면 shape이 0, 3JAW면 shape이 1
             shape = 0
-        else :
+        elif str(row[2]) == "3JAW":
             shape = 1
         type = str(row[3])
         size = str(row[4])
@@ -26,90 +28,119 @@ def read_CNCs(input, CNCs):
         if (size.find('~') == -1):
             continue
         ground = size.split('~')[0]
-        ground = ground[1:]
-        ceiling = size.split('~')[1]
+        ground = float(ground[1:])
 
+        try :
+            ceiling = float(size.split('~')[1])
+        except ValueError :
+            ceiling = 100.0
         cnc = CNC(number, ground, ceiling, shape, type)
         CNCs.append(cnc)
 
-def calculate_cycle_time_avgs(cycle_time_avgs, input, item_numbers):
-    workbook = xlrd.open_workbook(input)
-    worksheet = workbook.sheet_by_name("품번별 싸이클 타임 정보")
+def is_digit(str):
+   try:
+     tmp = float(str)
+     return True
+   except ValueError:
+     return False
 
-    n_rows = worksheet.nrows
+def make_job_pool(job_pool):
+    cursor1 = AccessDB.AccessDB()
+    cursor2 = AccessDB.AccessDB()
+    work_start = str(input("work date from : "))
+    work_end = str(input("work date until: "))
+    deli_start = str(input("delivery date from: "))
+    deli_end = str(input("delivery date until: "))
+    cursor1.execute("""
+        select  w.workno, w.workdate, w.DeliveryDate, w.GoodCd,i.GoodCd as raw_materialCd, w.OrderQty,
+		case when i.Class3 = '061038' then 0 else 1 end as Gubun,
+		REPLACE(REPLACE(i.Spec, 'HEX.', ''),'HEX','') as Spec
 
-    cycle_time_sums = {}
-    n = {}
+	    from TWorkreport_Han_Eng w
+	    inner join TGood i on w.Raw_Materialcd = i.GoodCd
+	    where w.workdate between """ + work_start + """ and """ + work_end + """
+	    and w.DeliveryDate between """ + deli_start + """ and """ + deli_end + """
+	    and w.PmsYn = 'N'
+	    and w.ContractYn = '1'
+	    and i.Class2 not in ('060002', '060006')
+	    and i.Class3 in ('061038', '061039')
+        """)
+    row = cursor1.fetchone()
+    while row:
+        GoodCd = row[3]
+        cycle_time = [0,0,0]
+        try :
+            spec = float((row[7].split('-'))[0]) #숫자(-문자) 형식 아닌 spec이 나오면 무시
+        except ValueError:
+            row = cursor1.fetchone()
+            continue
+        Qty = row[5]
+        Gubun = int(row[6])
+        search_cycle_time(cursor2, cycle_time, GoodCd, Gubun)
+        due_date = row[1]
+        print(due_date)
+        due_date_seconds = time.mktime((int(due_date[0:4]), int(due_date[4:6]), int(due_date[6:8]), 12, 0, 0, 0, 0, 0)) # 정오 기준
+        print(due_date_seconds)
+        newJob = Job(GoodCd, time = cycle_time, type = Gubun, quantity = Qty, due = due_date_seconds, size = spec)
+        job_pool.appendleft(newJob)
+        row = cursor1.fetchone()
 
-    for j in item_numbers:
-        cycle_time_sums[j] = [0,0,0]
-        cycle_time_avgs[j] = [0,0,0]
-        n[j] = [0,0,0]
+def search_cycle_time(cursor, cycle_time, GoodCd, Gubun):
+    flag1 = 0
+    flag2 = 0
+    if Gubun == 1:
+        flag3 = 1
+    elif Gubun == 0: # Gubun = 0 이면 3차 가공까지
+        flag3 = 0
 
-    for i in range(1, n_rows):
-        row = worksheet.row_values(i)
-        for j in item_numbers:
-            if str(row[0]) == j:
+    cursor.execute("""
+                    select  max(c.workdate) as workdate, j.DeliveryDate, j.GoodCd, j.OrderQty,
+    		        -- ISNULL(c.Prodqty,0) + ISNULL(c.Errqty,0) as Qty,
+    		        case when j.Class3 = '061038' then 0 else 1 end as Gubun,
+                    REPLACE(REPLACE(j.Spec, 'HEX.', ''),'HEX','')  as Spec,
+    			    c.Processcd, c.Cycletime , c.starttime, c.Endtime
 
-                if((row[9]) == 'P1    '):
-                    (cycle_time_sums[j])[0] += row[12]
-                    n[j][0] += 1
+    		        from  TWorkReport_CNC c 
+    		        inner join
+    				(
+    				select  w.workno, /*, max(c.workdate) as workdate*/ w.DeliveryDate, w.GoodCd, w.OrderQty, i.Class3, i.Spec
+    				from TWorkreport_Han_Eng w
+    				inner join TGood i on w.Raw_Materialcd = i.GoodCd
+    				where w.workdate between '20171201' and '20171220'
+    				and w.DeliveryDate between '20171220' and '20171231'  
+    				and w.PmsYn = 'N'
+    				and w.ContractYn = '1'
+    				and i.Class2 not in ('060002', '060006')
+    				and i.Class3 in ('061038', '061039')
+    				) j 
+    				 on c.Goodcd = j.GoodCd
+    				 where j.Goodcd = """ + GoodCd + """
+                    group by j.Goodcd, c.workdate, j.workno, j.DeliveryDate, j.OrderQty, c.Cycletime, c.Processcd,c.starttime, c.Endtime, j.Class3, Spec
 
-                elif((row[9]) == 'P2    '):
-                    (cycle_time_sums[j])[1] += row[12]
-                    n[j][1] += 1
-
-                elif ((row[9]) == 'P3    '):
-                    (cycle_time_sums[j])[2] += row[12]
-                    (n[j])[2] += 1
-
-                break
-
-    for i in item_numbers:
-        if ((n[i])[2] == 0):  #HEX BAR인 경우 2단계 공정까지밖에 없기 때문에 세번째 element 지움
-            (cycle_time_sums[i]).pop(2)
-            (cycle_time_avgs[i]).pop(2)
-            (n[i]).pop(2)
-        for j in range(len(n[i])):
-            (cycle_time_avgs[i])[j] = int( (cycle_time_sums[i])[j] / ((n[i])[j]  * 5 ) )
-
-
-    return 0
-
-def make_job_pool(job_pool, input, item_numbers, cycle_time_avgs, how_many):
-
-    workbook = xlrd.open_workbook(input)
-    worksheet1 = workbook.sheet_by_name("단조 사용 품번")
-    worksheet2 = workbook.sheet_by_name("HEX BAR 사용 품번")
-    n_rows1 = worksheet1.nrows
-    n_rows2 = worksheet2.nrows
-
-
-    for i in range(how_many):  #how_many개의 작업 만들어냄
-        n = random.randrange(0, len(item_numbers)) # len(item_numbers)개의 일 종류
-        quantity = random.randrange(50, 100)
-        flag = 0
-        for j in range(1, n_rows1):
-            row = worksheet1.row_values(j)
-            if str(row[4]) == item_numbers[n]:
-                size = str(row[9])
-                job_pool.appendleft(Job(item_numbers[n], cycle_time_avgs[item_numbers[n]], 0, size, quantity))  # 단조 사용 품번은 type 0으로 설정
-                flag = 1 #단조 사용품번에서 찾았으면  flag를 설정해서 다음 if문(HEX BAR 품번 찾는)을 무시하도록 함
-                break
-
-        if not flag: #단조 사용 품번에 없을 경우 HEX BAR 사용 품번으로 감
-            for j in range(1, n_rows2):
-                row = worksheet2.row_values(j)
-                if str(row[4]) == item_numbers[n]:
-                    size = str(row[9])
-                    job_pool.appendleft(Job(item_numbers[n], cycle_time_avgs[item_numbers[n]], 1, size, quantity))   # HEX BAR 사용 품번은 type 1로 설정
-                    break
-    return 0
+                    order by c.workdate DESC
+                    """
+                    )
+    row = cursor.fetchone()
+    while(row):
+        processcd = row[6].strip()
+        if processcd == 'P1' and flag1 == 0:
+            cycle_time[0] = float(row[7])
+            flag1 = 1
+        elif processcd == 'P2' and flag2 == 0:
+            cycle_time[1] = float(row[7])
+            flag2 = 1
+        elif processcd == 'P3' and flag3 == 0:
+            cycle_time[2] = float(row[7])
+            flag3 = 1
+        if flag1 == 1 and flag2 == 1 and flag3 == 1:
+            break
+        row = cursor.fetchone()
 
 def schedule(CNCs, job_pool, machines):
     total_delayed_time = 0
     total_delayed_jobs_count = 0
     last_job_execution = 0
+    unAssigned = []
     for cnc in CNCs:
         machines[cnc.getNumber()] = list()
 
@@ -130,15 +161,17 @@ def schedule(CNCs, job_pool, machines):
     # sortedHexPool = sorted(hexPool, key = lambda j: j.getDue())
 
 
-
     for i, j in enumerate(normPool):
 
         selected_CNCs = []
         for c in normCNCs:
-            if (float(c.getGround()) <= float(j.getSize()) < float(c.getCeiling())):  # size 맞는 CNC는 모두 찾음
+            if c.getGround() <= j.getSize() <= c.getCeiling():  # size 맞는 CNC는 모두 찾음
                 selected_CNCs.append(c)
 
         timeLefts = [sum([j.getTime() for j in machines[c.getNumber()]]) for c in selected_CNCs]
+        if len(timeLefts) <= 0: #조건에 맞는 CNC가 하나도 없으면
+            unAssigned.append(j)
+            continue
         minValue = min(timeLefts)
         minIndex = timeLefts.index(minValue)
         cnc = selected_CNCs[minIndex]
@@ -154,7 +187,7 @@ def schedule(CNCs, job_pool, machines):
         if last_job_execution < time_left_of_cnc:
             last_job_execution = time_left_of_cnc
 
-        diff = j.getDue() - (time_left_of_cnc + j.getTime())
+        diff = j.getDue() - (time_left_of_cnc + j.getTime() + int(time.time()))
         if diff < 0:
             notice += "(" + str((-1) * diff) + "more time units needed to meet duetime)\n"
             total_delayed_jobs_count += 1
@@ -164,7 +197,7 @@ def schedule(CNCs, job_pool, machines):
     for i, j in enumerate(hexPool):
         selected_CNCs = []
         for c in hexCNCs:
-            if (float(c.getGround()) <= float(j.getSize()) < float(c.getCeiling())):  # size 맞는 CNC는 모두 찾음
+            if (c.getGround() <= j.getSize() <= c.getCeiling()):  # size 맞는 CNC는 모두 찾음
                 selected_CNCs.append(c)
 
                 timeLefts = [sum([j.getTime() for j in machines[c.getNumber()]]) for c in selected_CNCs]
@@ -183,7 +216,7 @@ def schedule(CNCs, job_pool, machines):
         if last_job_execution < time_left_of_cnc:
             last_job_execution = time_left_of_cnc
 
-        diff = j.getDue() - (time_left_of_cnc + j.getTime())
+        diff = j.getDue() - (time_left_of_cnc + j.getTime() +  int(time.time()))
         if diff < 0:
             notice += "(" + str((-1) * diff) + "more time units needed to meet duetime)\n"
             total_delayed_jobs_count += 1
@@ -271,10 +304,6 @@ def assign(CNCs, job_pool, ready_pool, in_progress):  #CNC에 job들을 분배�
 
     msg = [total_delayed_time, total_delayed_jobs_count, last_job_execution]
     return msg
-
-def newJobs():
-    return np.random.choice([0,1], 1, p = [0.9995, 0.0005])
-
 
 def update(CNCs, unitTime, ready_pool, in_progress):
     for c in CNCs:
