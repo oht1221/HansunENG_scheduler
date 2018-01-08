@@ -3,8 +3,10 @@ import random
 import numpy as np
 
 class Job:
-    def __init__(self, number, type, size, quantity, time = [0,0,0], due = 0):
-        self.number = number
+    def __init__(self, workno, workdate, good_num, type, size, quantity, time = [0,0,0], due = 0):
+        self.workno = workno
+        self.worodate = workdate
+        self.good_num = good_num
         self.timeLeft = sum(time) * quantity # 재셋팅 시간 1000 추가
         self.type = type
         self.size = size
@@ -21,6 +23,9 @@ class Job:
     def update_due(self):
         self.due -= 1
 
+    def getWorkno(self):
+        return self.workno
+
     def getSeries(self):
         return self.series
 
@@ -30,8 +35,8 @@ class Job:
     def getSize(self):
         return self.size
 
-    def getNumber(self):
-        return self.number
+    def getGoodNum(self):
+        return self.good_num
 
     def getTime(self):
         self.timeLeft = sum([component.getTime() for component in self.series])

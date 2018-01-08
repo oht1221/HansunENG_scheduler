@@ -11,7 +11,8 @@ IN_PROGRESS = deque()
 
 scheduler.make_job_pool(JOB_POOL)
 for j in JOB_POOL:
-    print(j.number)
+    print(j.getWorkno())
+    print(j.getGoodNum())
 
 scheduler.read_CNCs('./hansun2.xlsx', CNCs)
 #scheduler.calculate_cycle_time_avgs(CYCLE_TIME_AVGS, './hansun2.xlsx', ITEM_NUMBERS)
@@ -31,7 +32,7 @@ while(1):
         for j in m:
             i = (i + 1) % 5
             print(end='|  ')
-            print(j.getNumber(), end=' (')
+            print(j.getGoodNum(), end=' (')
             for n in range(len(j.getSeries())):
                 print(j.getComponent(n).ifDone(), end=' ')
             print(end=') ')

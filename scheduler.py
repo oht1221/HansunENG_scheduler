@@ -26,7 +26,7 @@ def read_CNCs(input, CNCs):
         size = str(row[4])
 
         if (size.find('~') == -1):
-            continue
+            continue #'후가공' cnc는 제외
         ground = size.split('~')[0]
         ground = float(ground[1:])
 
@@ -47,8 +47,6 @@ def is_digit(str):
 def make_job_pool(job_pool):
     cursor1 = AccessDB.AccessDB()
     cursor2 = AccessDB.AccessDB()
-    work_start = str(input("work date from : "))
-    work_end = str(input("work date until: "))
     deli_start = str(input("delivery date from: "))
     deli_end = str(input("delivery date until: "))
     cursor1.execute("""
@@ -58,8 +56,7 @@ def make_job_pool(job_pool):
 
 	    from TWorkreport_Han_Eng w
 	    inner join TGood i on w.Raw_Materialcd = i.GoodCd
-	    where w.workdate between """ + work_start + """ and """ + work_end + """
-	    and w.DeliveryDate between """ + deli_start + """ and """ + deli_end + """
+	    where w.DeliveryDate between """ + deli_start + """ and """ + deli_end + """
 	    and w.PmsYn = 'N'
 	    and w.ContractYn = '1'
 	    and i.Class2 not in ('060002', '060006')
@@ -67,6 +64,11 @@ def make_job_pool(job_pool):
         """)
     row = cursor1.fetchone()
     while row:
+        workno = row[0]
+        workdate = row[1]
+        due_date = row[2]
+        due_date_seconds = time.mktime((int(due_date[0:4]), int(due_date[4:6]), int(due_date[6:8]), 12, 0, 0, 0, 0, 0)) # 정오 기준
+        due_date_seconds = int(due_date_seconds)
         GoodCd = row[3]
         cycle_time = [0,0,0]
         try :
@@ -76,17 +78,14 @@ def make_job_pool(job_pool):
             continue
         Qty = row[5]
         Gubun = int(row[6])
-        search_cycle_time(cursor2, cycle_time, GoodCd, Gubun, work_start, work_end, deli_start, deli_end)
-        due_date = row[2]
-        due_date_seconds = time.mktime((int(due_date[0:4]), int(due_date[4:6]), int(due_date[6:8]), 12, 0, 0, 0, 0, 0)) # 정오 기준
-        due_date_seconds = int(due_date_seconds)
-        newJob = Job(GoodCd, time = cycle_time, type = Gubun, quantity = Qty, due = due_date_seconds, size = spec)
+        search_cycle_time(cursor2, cycle_time, GoodCd, Gubun, deli_start, deli_end)
+        newJob = Job(workno = workno, workdate = workdate, good_num = GoodCd, time = cycle_time, type = Gubun, quantity = Qty, due = due_date_seconds, size = spec)
         job_pool.appendleft(newJob)
         row = cursor1.fetchone()
 
     print("the total # of job : %d"%len(job_pool))
 
-def search_cycle_time(cursor, cycle_time, GoodCd, Gubun, work_start, work_end, deli_start, deli_end):
+def search_cycle_time(cursor, cycle_time, GoodCd, Gubun, deli_start, deli_end):
     flag1 = 0
     flag2 = 0
     if Gubun == 1:
@@ -107,8 +106,7 @@ def search_cycle_time(cursor, cycle_time, GoodCd, Gubun, work_start, work_end, d
     				select  w.workno, /*, max(c.workdate) as workdate*/ w.DeliveryDate, w.GoodCd, w.OrderQty, i.Class3, i.Spec
     				from TWorkreport_Han_Eng w
     				inner join TGood i on w.Raw_Materialcd = i.GoodCd
-    				where w.workdate between """ + work_start + """ and """ + work_end + """
-	                and w.DeliveryDate between """ + deli_start + """ and """ + deli_end + """ 
+    				where w.DeliveryDate between """ + deli_start + """ and """ + deli_end + """ 
     				and w.PmsYn = 'N'
     				and w.ContractYn = '1'
     				and i.Class2 not in ('060002', '060006')
@@ -185,7 +183,7 @@ def schedule(CNCs, job_pool, machines):
         j.assignedTo(cnc)
         #ready_pool.appendleft(j)
         #job_pool.remove(j)
-        notice = "a new job(" + str(j.getNumber()) + ") asggined to CNC #(" + \
+        notice = "a new job(" + str(j.getGoodNum()) + ") asggined to CNC #(" + \
                  str(cnc.getNumber()) + ")!\n"
 
         time_left_of_cnc = sum([j.getTime() for j in machines[cnc.getNumber()]])
@@ -216,7 +214,7 @@ def schedule(CNCs, job_pool, machines):
         j.assignedTo(cnc)
         #ready_pool.appendleft(j)
         #job_pool.remove(j)
-        notice = "a new job(" + str(j.getNumber()) + ") asggined to CNC #(" + \
+        notice = "a new job(" + str(j.getGoodNum()) + ") asggined to CNC #(" + \
                  str(cnc.getNumber()) + ")!\n"
 
         time_left_of_cnc = sum([j.getTime() for j in machines[cnc.getNumber()]])
@@ -273,7 +271,7 @@ def assign(CNCs, job_pool, ready_pool, in_progress):  #CNC에 job들을 분배�
         j.assignedTo(cnc)
         ready_pool.appendleft(j)
         job_pool.remove(j)
-        notice = "a new job(" + str(j.getNumber()) + ") asggined to CNC #(" + \
+        notice = "a new job(" + str(j.getGoodNum()) + ") asggined to CNC #(" + \
                  str(cnc.getNumber()) + ")!\n"
 
         if last_job_execution < cnc.get_timeLeft():
@@ -299,7 +297,7 @@ def assign(CNCs, job_pool, ready_pool, in_progress):  #CNC에 job들을 분배�
         cnc.enQ(j, in_progress=in_progress)
         ready_pool.appendleft(j)
         job_pool.remove(j)
-        notice = "a new job(" + str(j.getNumber()) + ") asggined to CNC #(" + \
+        notice = "a new job(" + str(j.getGoodNum()) + ") asggined to CNC #(" + \
                  str(cnc.getNumber()) + ")!\n"
 
         if last_job_execution < cnc.get_timeLeft():
