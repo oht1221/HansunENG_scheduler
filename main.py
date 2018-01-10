@@ -15,7 +15,6 @@ for j in JOB_POOL:
     print(j.getGoodNum())
 
 scheduler.read_CNCs('./hansun2.xlsx', CNCs)
-#scheduler.calculate_cycle_time_avgs(CYCLE_TIME_AVGS, './hansun2.xlsx', ITEM_NUMBERS)
 
 while(1):
     machines= {}
