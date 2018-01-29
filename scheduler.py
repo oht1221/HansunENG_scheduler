@@ -95,7 +95,7 @@ def read_current_state():
         processcd = row[2]
         left_qty = row[3] - row[4]
         cycle_time = row[5]
-def initial_assignment():
+def initial_assignment(machines):
     cursor = AccessDB.AccessDB()
     cursor.execute('''  declare @THse_CNC_Work_List table (
         [Accunit] [char](3) NULL,
@@ -150,12 +150,32 @@ def initial_assignment():
     while(row):
         cncNo = row[0]
         workNo = row[1]
+        processcd = row[2].strip()
+        row = cursor.fetchone()
         orderQty = row[3]
         producedQty = row[4]
         cycleTime = row[5]
-        timeLeft = (orderQty - producedQty) * cycleTime
+        Qty = orderQty - producedQty
+        cycle_time = [0, 0, 0]
+        if processcd == 'P1':
+            cycle_time[0] = int(cycleTime)
+        elif processcd == 'P2':
+            cycle_time[1] = int(cycleTime)
+        elif processcd == 'P3':
+            cycle_time[2] = int(cycleTime)
         goodCd = row[7]
+        workdate = row[8]
         row = cursor.fetchone()
+
+        due_date = row[6]
+        due_date_seconds = time.mktime(
+            (int(due_date[0:4]), int(due_date[4:6]), int(due_date[6:8]), 12, 0, 0, 0, 0, 0))  # 정오 기준
+        due_date_seconds = int(due_date_seconds)
+
+        newJob = Job(workno=workNo, workdate=workdate, good_num=goodCd, time=cycle_time, quantity=Qty,
+                     due=due_date_seconds)
+        (machines[cncNo]).append(newJob)
+
 
 def make_job_pool(job_pool):
     cursor1 = AccessDB.AccessDB()
