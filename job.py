@@ -3,7 +3,7 @@ import random
 import numpy as np
 
 class Job:
-    def __init__(self, workno, good_num, type, quantity ,size = None,  workdate = None, time = [0,0,0], due = 0):
+    def __init__(self, workno, good_num, quantity ,type = None, size = None,  workdate = None, time = [0,0,0], due = 0):
         self.workno = workno
         self.worodate = workdate
         self.good_num = good_num
