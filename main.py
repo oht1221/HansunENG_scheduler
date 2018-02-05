@@ -1,5 +1,6 @@
 import time
 import scheduler
+import cnc
 import AccessDB
 from collections import deque
 
@@ -32,6 +33,7 @@ while(1):
         for j in m:
             i = (i + 1) % 5
             print(end='|  ')
+            print(j.getWorkno(), end = '  ')
             print(j.getGoodNum(), end=' (')
             for n in range(len(j.getSeries())):
                 print(j.getComponent(n).ifDone(), end=' ')

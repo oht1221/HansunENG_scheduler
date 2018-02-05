@@ -17,7 +17,7 @@ def read_CNCs(input, CNCs):
 
     for i in range(2,41): #1, 2, 6, 8, 10, 16, 22번 cnc
         row = worksheet.row_values(i)
-        number = str(row[1])
+        number = float(row[1])
         if str(row[2]) == "2JAW":   #2JAW 면 shape이 0, 3JAW면 shape이 1
             shape = 0
         elif str(row[2]) == "3JAW":
@@ -36,68 +36,10 @@ def read_CNCs(input, CNCs):
             ceiling = 100.0
         cnc = CNC(number, ground, ceiling, shape, type)
         CNCs.append(cnc)
-def read_current_state():
-    cursor = AccessDB.AccessDB()
-    cursor.execute("""
-                    declare @THse_CNC_Work_List table (
-        [Accunit] [char](3) NULL,
-    	[Factory] [char](3) NULL,
-  	    [Cnc] [char](6) NULL,
-    	[Workdate] [char](8) NULL,
-	    [Seq] [char](4) NULL,
-	    [Workno] [varchar](20) NULL,
-	    [Goodcd] [varchar](8) NULL,
-	    [Processcd] [char](2) NULL,
-	    [Prodqty] [numeric](18, 0) NULL,
-	    [Errqty] [numeric](18, 0) NULL,
-	    [Crepno] [char](5) NULL,
-	    [Credate] [smalldatetime] NULL,
-	    [Modpno] [char](5) NULL,
-	    [Moddate] [smalldatetime] NULL
-    ) 
 
-    insert @THse_CNC_Work_List
-    select a.Accunit, a.Factory, a.Cnc, a.Workdate, a.Seq, a.Workno, w.Goodcd, a.Processcd,
-           a.Prodqty, a.Errqty, a.Crepno, a.Credate, a.Modpno, a.Moddate
-    from THse_Cnc_Machine_Assignment a
-    left outer join ( select a.Cnc, a.Workdate, MAX(b.Seq) as Seq
-                      from
-                      (
-                          select a.Cnc, MAX(a.Workdate) as Workdate
-                          from THse_Cnc_Machine_Assignment a
-                          group by a.Cnc
-                      ) a 
-                      left outer join THse_Cnc_Machine_Assignment b on a.Cnc = b.Cnc and a.Workdate = b.Workdate
-                      group by a.Cnc, a.Workdate ) b on a.Cnc = b.Cnc and a.Workdate = b.Workdate and a.Seq = b.Seq
-    left outer join TWorkreport_Han_Eng w on a.Workno = w.Workno
-    where b.Cnc is not null
-    order by a.Cnc
-
-
-    select m.MinorNm as [장비명], a.Workno, a.Processcd, w.OrderQty as [작업지시수량], ISNULL(b.Prodqty,0) + ISNULL(b.Errqty,0) as [작업수량], ISNULL(c.Cycletime,0) as [C/T]
-    from @THse_CNC_Work_List a
-    left outer join (    select a.Workno, a.Processcd, SUM(a.Prodqty) as Prodqty, SUM(a.Errqty) as Errqty
-                         from TWorkReport_CNC a, @THse_CNC_Work_List b
-                         where a.Workdate > '20170101' and a.Workno = b.Workno and a.Processcd = b.Processcd
-                         group by a.Workno, a.Processcd    ) b on a.Workno = b.Workno and a.Processcd = b.Processcd
-    left outer join (    select ROW_NUMBER() over (partition by a.Goodcd, a.Processcd order by a.Workdate, a.Gubun desc) as _Rank,
-                                a.Goodcd, a.Processcd, a.Cycletime
-                         from TWorkReport_CNC a, @THse_CNC_Work_List b
-                         where a.Goodcd = b.Goodcd ) c on a.Goodcd = c.Goodcd and a.Processcd = c.Processcd and c._Rank = 1
-    left outer join TMinor m on a.Cnc = m.MinorCd and m.MinorCd like '293%'
-    left outer join TWorkreport_Han_Eng w on a.Workno = w.Workno
-    order by m.SortSeq
-                """)
-    row = cursor.fetchone()
-    while row:
-        machine_no = row[0]
-        workno = row[1]
-        processcd = row[2]
-        left_qty = row[3] - row[4]
-        cycle_time = row[5]
 def initial_assignment(CNCs, machines):
     for cnc in CNCs:
-        machines[cnc.getNumber()] = list()
+        machines[float(cnc.getNumber())] = list()
     cursor = AccessDB.AccessDB()
     cursor.execute("""
        select m.MinorNm as [장비명], a.Workno, a.Processcd, w.OrderQty as [작업지시수량], ISNULL(b.Prodqty,0) + ISNULL(b.Errqty,0) as [작업수량], ISNULL(c.Cycletime,0) as [C/T],
@@ -118,7 +60,11 @@ def initial_assignment(CNCs, machines):
     row = cursor.fetchone()
     while(row):
         cncNo = row[0]
-        cncNo - float(cncNo.split())[0]
+        try:
+            cncNo = float((cncNo.split())[0])  # 숫자(-문자) 형식 아닌 spec이 나오면 무시
+        except ValueError:
+            row = cursor.fetchone()
+            continue
         workNo = row[1]
         processcd = row[2].strip()
         orderQty = row[3]
@@ -142,7 +88,13 @@ def initial_assignment(CNCs, machines):
 
         newJob = Job(workno=workNo, workdate=workdate, good_num=goodCd, time=cycle_time, quantity=Qty,
                      due=due_date_seconds)
-        (machines[cncNo]).append(newJob)
+        try:
+            (machines[cncNo]).append(newJob)
+        except KeyError:
+            row = cursor.fetchone()
+            print("CNC %d은 후가공 전용 " %(cncNo))
+            continue
+
         row = cursor.fetchone()
 
 

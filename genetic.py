@@ -1,21 +1,28 @@
+    import scheduler
+    import random
+    POPULATION = 10
+    chromosomes = [POPULATION]
 
-import scheduler
-import random
+    def genetic_algorithm(job_pool):
+        for i in range(POPULATION):
+            chromosomes[i] = initial_permutation(job_pool)
 
-solution = list()
+    def initial_permutation(pool):
+        per = list()
+        while (len(pool) != len(per)):
+            i = random.randrange(0, len(pool))
+            newElement = pool[i]
+            per.append(newElement)
+        return per
 
-def genetic_algorithm(job_pool):
-    cities = job_pool
-    permutation(cities)
+    def cross_over():
 
+    def mutation():
 
+    def total_delayed_time():
 
+    def total_delayed_jobs_count():
 
+    def last_job_execution():
 
-def permutation(pool):
-    per = list()
-    while(len(pool) != 0):
-        i = random.randrange(0, len(pool))
-        newElement =  pool[i]
-        per.append(newElement)
-    return per
+    def evaluate():
