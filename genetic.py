@@ -38,27 +38,31 @@ def interpret(machines, chromosome):
     Machines = machines.values()
     machineNo = 0
     direction = 1
-    while machineNo < len(Machines):
+    while position >= len(chromosome):
         try :
             Machines[machineNo].append(chromosome[position])
         except IndexError as e:
             print(e)
             break
         position = position + 1
-        choose_next_machine(machineNo, direction, len(Machines))
-def check_if_last(chromosome):
-    if chromosome
+        machineNo, direction = choose_next_machine(machineNo, direction, len(Machines))
+
+
 def choose_next_machine(machineNo, direction, upper_limit):
+    next_machine = machineNo
+    next_direction = direction
     if direction == 1:
-        machineNo = machineNo + 1
-    else:
-        machineNo = machineNo - 1
-    if machineNo >= upper_limit:  # 맨 뒷자리 machine에 도달하면
-        direction = 0  # 이동방향 전환
-        machineNo = machineNo - 1  #
-    elif machineNo < 0:  # 맨 앞자리 machine으로 돌아오면
-        direction = 1
-        machineNo = machineNo + 1
+        next_machine = machineNo + 1
+    elif direction == 0:
+        next_machine = machineNo - 1
+    if next_machine >= upper_limit:  # 맨 뒷자리 machine에 도달하면
+        next_direction = 0  # 이동방향 전환
+        next_machine = next_machine - 1  #
+    elif next_machine < 0:  # 맨 앞자리 machine으로 돌아오면
+        next_direction = 1
+        next_machine = next_machine + 1
+
+    return [next_machine, next_direction]
 
 def splitPool(job_pool, normPool, hexPool):
 
