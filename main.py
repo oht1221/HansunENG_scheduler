@@ -1,5 +1,6 @@
 import time
 import scheduler
+import genetic
 import cnc
 import AccessDB
 from collections import deque
@@ -11,11 +12,8 @@ READY_POOL = deque()
 IN_PROGRESS = deque()
 
 scheduler.make_job_pool(JOB_POOL)
-for j in JOB_POOL:
-    print(j.getWorkno())
-    print(j.getGoodNum())
-
 scheduler.read_CNCs('./hansun2.xlsx', CNCs)
+
 
 while(1):
     machines= {}
