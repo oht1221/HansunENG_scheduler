@@ -37,9 +37,7 @@ def read_CNCs(input, CNCs):
         cnc = CNC(number, ground, ceiling, shape, type)
         CNCs.append(cnc)
 
-def initial_assignment(CNCs, machines):
-    for cnc in CNCs:
-        machines[float(cnc.getNumber())] = list()
+def initial_assignment(machines):
     cursor = AccessDB.AccessDB()
     cursor.execute("""
        select m.MinorNm as [장비명], a.Workno, a.Processcd, w.OrderQty as [작업지시수량], ISNULL(b.Prodqty,0) + ISNULL(b.Errqty,0) as [작업수량], ISNULL(c.Cycletime,0) as [C/T],

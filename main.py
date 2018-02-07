@@ -17,6 +17,8 @@ scheduler.read_CNCs('./hansun2.xlsx', CNCs)
 
 while(1):
     machines= {}
+    for cnc in CNCs:
+        machines[float(cnc.getNumber())] = list()
     scheduler.initial_assignment(CNCs, machines)
     msg = scheduler.schedule(CNCs, JOB_POOL, machines)
     client = ''
