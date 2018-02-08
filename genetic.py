@@ -21,13 +21,13 @@ def cross_over(chromosome):
 
 def mutation(chromosome):
 
-def total_delayed_time(chromosome):
-
+def total_delayed_time(chromosome, machines):
+    chromosome
 def total_delayed_jobs_count(chromosome):
 
 def last_job_execution(chromosome):
 
-def inappropriate_size_count(chromosome:
+def inappropriate_size_count(chromosome):
 
 def inappropriate_type_count(chromosome):
 
@@ -47,6 +47,7 @@ def interpret(machines, chromosome):
         position = position + 1
         machineNo, direction = choose_next_machine(machineNo, direction, len(Machines))
 
+    return e
 
 def choose_next_machine(machineNo, direction, upper_limit):
     next_machine = machineNo
