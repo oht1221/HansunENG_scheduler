@@ -15,6 +15,16 @@ scheduler.make_job_pool(JOB_POOL)
 scheduler.read_CNCs('./hansun2.xlsx', CNCs)
 
 
+machines = {}
+for cnc in CNCs:
+    machines[float(cnc.getNumber())] = list()
+
+genetic.make_pool(JOB_POOL)
+genetic.show_pool(machines)
+genetic.show_chromosomes()
+
+
+"""
 while(1):
     machines= {}
     for cnc in CNCs:
@@ -57,6 +67,7 @@ while(1):
     if client == 'n':
         break
 
+"""
 '''i = 0
 while(1):
 
