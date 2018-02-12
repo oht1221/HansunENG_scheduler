@@ -50,7 +50,9 @@ def interpret(machines, chromosome):
             break
         position = position + 1
         i, direction = choose_next_machine(i, direction, len(machines) - 1)
-    for m in machines:
+
+    i = 0
+    for m in machines.values():
         for j in m:
             i = (i + 1) % 5
             print(end='|  ')
