@@ -19,10 +19,11 @@ machines = {}
 for cnc in CNCs:
     machines[float(cnc.getNumber())] = list()
 
-genetic.make_pool(JOB_POOL)
+genetic.initialize_mating_pool(JOB_POOL)
 genetic.show_pool(machines)
-genetic.show_chromosomes()
-
+offspring1 = genetic.order_corssover(1,2,5,18)
+offspring2 = genetic.order_corssover(3,4,13,26)
+genetic.show_pool(machines,[offspring1, offspring2])
 
 """
 while(1):
