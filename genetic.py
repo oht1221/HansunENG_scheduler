@@ -53,7 +53,6 @@ def show_pool(machines, pool = None):
         pool = chromosomes
     for i, c in enumerate(pool):
         print(" -------------------------------------------- chromosome %d start -------------------------------------------- "%(i+1))
-        interpret(machines, c)
         for k, v in machines.items():
             i = 0
             print(k)
@@ -89,7 +88,7 @@ def interpret(machines, chromosome):
         position = position + 1
         i, direction = choose_next_machine(i, direction, len(machines) - 1)
 
-    evaluate(machines, chromosome)
+    #evaluate(machines, chromosome, CNCs)
 
 def choose_next_machine(machineIndex, direction, upper_limit):
     next_machine = machineIndex
@@ -137,8 +136,8 @@ def show_chromosome(chromosome):
 def show_chromosomes():
     for c in chromosomes:
         show_chromosome(c)
-def next_generation(chromosomes):
-    order_corssover(parent_1, parent_2, start, end)
+'''def next_generation(chromosomes):
+    order_corssover(parent_1, parent_2, start, end)'''
 
 def inversion_mutation(chromosome):
     position = random.randrange(0, len(chromosome))
@@ -164,7 +163,7 @@ def inversion_with_displacement_mutation(chromosome):
 
     return
 
-def delay_score(machines, standard, notice):
+def time_related_score(machines, standard):
     global TOTAL_DELAYED_JOBS_COUNT
     global TOTAL_DELAYED_TIME
     global LAST_JOB_EXECUTION
@@ -172,7 +171,7 @@ def delay_score(machines, standard, notice):
     TOTAL_DELAYED_TIME = 0
     LAST_JOB_EXECUTION = 0
 
-    for m in machines:
+    for m in machines.values():
         job_execution_time = standard
         time_left_of_machine = sum([j.getTime() for j in m])
         if time_left_of_machine > LAST_JOB_EXECUTION :
@@ -183,36 +182,46 @@ def delay_score(machines, standard, notice):
             print('----------')
             print(j.getDue())
             if diff < 0:
-                notice += "(" + str((-1) * diff) + "more time units needed to meet duetime)\n"
                 TOTAL_DELAYED_JOBS_COUNT += 1
                 TOTAL_DELAYED_TIME += (-1) * diff
-    return notice
-
-'''def last_job_execution(machines):
-    global LAST_JOB_EXECUTION
-    LAST_JOB_EXECUTION = 0
-    
-    for m in machines:
-        time_left_of_cnc = sum([j.getTime() for j in m])
-        if time_left_of_cnc > LAST_JOB_EXECUTION :
-            LAST_JOB_EXECUTION = time_left_of_cnc
-
-    return 0'''
-def inappropriate_size_count(machines):
-    for k, m in machines.items():
-        for j in m:
-            if j.getType() != k:
     return
-def inappropriate_type_count(machines):
+
+def size_type_related_score(machines, CNCs):
+    global INAPPROPRIATE_TYPE_COUNT
+    global INAPPROPRIATE_SIZE_COUNT
+    INAPPROPRIATE_TYPE_COUNT = 0
+    INAPPROPRIATE_SIZE_COUNT = 0
+
+    for k, m in machines.items(): # machines 번호(key)와 ,포인터 반환
+        for c in CNCs:
+            if c.getNumber() == k: # 해당 번호의 CNC 찾고
+                for j in m: #job과 CNC의 type이 일치하는지 확인
+                    if j.getType() !=  c.getShape():
+                        INAPPROPRIATE_TYPE_COUNT += 1
+                    if j.getSize() < c.getGround() and j.getSize() > c.getCeiling():
+                        INAPPROPRIATE_SIZE_COUNT += 1
+                break
+
     return
-def evaluate(machines):
+
+def evaluate(machines, standard, CNCs):
+
+    time_related_score(machines, standard)
+    size_type_related_score(machines, CNCs)
 
     global INAPPROPRIATE_SIZE_COUNT
     global INAPPROPRIATE_TYPE_COUNT
     global LAST_JOB_EXECUTION
     global TOTAL_DELAYED_JOBS_COUNT
     global TOTAL_DELAYED_TIME
-
+    print("inappropriate_size_count: %d" %(INAPPROPRIATE_SIZE_COUNT))
+    print("inappropriate_type_count: %d" %(INAPPROPRIATE_TYPE_COUNT))
+    print("last_job_execution: %d" % (INAPPROPRIATE_TYPE_COUNT))
+    print("total_delayed_jobs_count: %d" % (INAPPROPRIATE_TYPE_COUNT))
+    print("total_delayed_time: %d" % (INAPPROPRIATE_TYPE_COUNT))
+    score = INAPPROPRIATE_SIZE_COUNT + INAPPROPRIATE_TYPE_COUNT + LAST_JOB_EXECUTION \
+            + TOTAL_DELAYED_JOBS_COUNT + TOTAL_DELAYED_TIME
+    print("score : %d" %(score))
     score = INAPPROPRIATE_SIZE_COUNT + INAPPROPRIATE_TYPE_COUNT + LAST_JOB_EXECUTION\
     + TOTAL_DELAYED_JOBS_COUNT + TOTAL_DELAYED_TIME
 
