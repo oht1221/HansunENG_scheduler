@@ -6,6 +6,10 @@ import random
 POPULATION = 10
 chromosomes = list()
 LAST_JOB_EXECUTION = 0
+TOTAL_DELAYED_TIME = 0
+TOTAL_DELAYED_JOBS_COUNT = 0
+INAPPROPRIATE_SIZE_COUNT = 0
+INAPPROPRIATE_TYPE_COUNT = 0
 
 def initialize_mating_pool(job_pool):
     for i in range(POPULATION):
@@ -134,42 +138,82 @@ def show_chromosomes():
     for c in chromosomes:
         show_chromosome(c)
 def next_generation(chromosomes):
-
     order_corssover(parent_1, parent_2, start, end)
 
-def mutation(chromosome):
-    return
-def total_delayed_time(machines):
-    return
-def total_delayed_jobs_count(machines, standard):
-    for m in machines:
-        time_left_of_cnc = sum([j.getTime() for j in m])
-        diff = j.getDue() - (time_left_of_cnc + j.getTime() + standard)
-        print('----------')
-        print(j.getDue())
-        if diff < 0:
-            notice += "(" + str((-1) * diff) + "more time units needed to meet duetime)\n"
-            total_delayed_jobs_count += 1
-            total_delayed_time += (-1) * diff
+def inversion_mutation(chromosome):
+    position = random.randrange(0, len(chromosome))
+    left = chromosome[position - 1]
+    chromosome[position - 1] = chromosome[position + 1]
+    chromosome[position + 1] = left
+
+def inversion_with_displacement_mutation(chromosome):
+    position1 = random.randrange(0, len(chromosome))
+    position2 = random.randrange(0, len(chromosome))
+
+    temp = chromosome[position1]
+    chromosome[position1] = chromosome[position2]
+    chromosome[position2] = temp
+
+    left1 = chromosome[position1 - 1]
+    right1 = chromosome[position1 + 1 % len(chromosome)]
+    chromosome[position1 - 1] = chromosome[position2 + 1]
+    chromosome[position1 + 1  % len(chromosome)] = chromosome[position2 - 1]
+
+    chromosome[position2 - 1] = right1
+    chromosome[position2 + 1 % len(chromosome)] = left1
+
     return
 
-def last_job_execution(machines):
+def delay_score(machines, standard, notice):
+    global TOTAL_DELAYED_JOBS_COUNT
+    global TOTAL_DELAYED_TIME
     global LAST_JOB_EXECUTION
+    TOTAL_DELAYED_JOBS_COUNT = 0
+    TOTAL_DELAYED_TIME = 0
+    LAST_JOB_EXECUTION = 0
+
+    for m in machines:
+        job_execution_time = standard
+        time_left_of_machine = sum([j.getTime() for j in m])
+        if time_left_of_machine > LAST_JOB_EXECUTION :
+            LAST_JOB_EXECUTION = time_left_of_machine
+        for j in m:
+            job_execution_time += j.getTime()
+            diff = j.getDue() - job_execution_time
+            print('----------')
+            print(j.getDue())
+            if diff < 0:
+                notice += "(" + str((-1) * diff) + "more time units needed to meet duetime)\n"
+                TOTAL_DELAYED_JOBS_COUNT += 1
+                TOTAL_DELAYED_TIME += (-1) * diff
+    return notice
+
+'''def last_job_execution(machines):
+    global LAST_JOB_EXECUTION
+    LAST_JOB_EXECUTION = 0
+    
     for m in machines:
         time_left_of_cnc = sum([j.getTime() for j in m])
         if time_left_of_cnc > LAST_JOB_EXECUTION :
             LAST_JOB_EXECUTION = time_left_of_cnc
-    return 0
-def inappropriate_size_count(machines):
 
+    return 0'''
+def inappropriate_size_count(machines):
+    for k, m in machines.items():
+        for j in m:
+            if j.getType() != k:
     return
 def inappropriate_type_count(machines):
     return
 def evaluate(machines):
-    result1 = total_delayed_jobs_count(machines)
-    result2 = total_delayed_jobs_count(machines)
-    result3 = last_job_execution(machines)
-    result4 = inappropriate_size_count(machines)
-    result5 = inappropriate_type_count(machines)
 
-    return [result1, result2, result3, result4, result5]
+    global INAPPROPRIATE_SIZE_COUNT
+    global INAPPROPRIATE_TYPE_COUNT
+    global LAST_JOB_EXECUTION
+    global TOTAL_DELAYED_JOBS_COUNT
+    global TOTAL_DELAYED_TIME
+
+    score = INAPPROPRIATE_SIZE_COUNT + INAPPROPRIATE_TYPE_COUNT + LAST_JOB_EXECUTION\
+    + TOTAL_DELAYED_JOBS_COUNT + TOTAL_DELAYED_TIME
+
+    return score
