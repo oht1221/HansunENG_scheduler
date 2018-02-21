@@ -27,11 +27,13 @@ genetic.initialize_mating_pool(JOB_POOL)
 offspring1 = genetic.order_corssover(1,2,5,18)
 genetic.interpret(machines, offspring1)
 genetic.evaluate(machines, standard, CNCs)
+genetic.show_pool(machines,[offspring1])
+
 offspring2 = genetic.order_corssover(3,4,13,26)
 genetic.interpret(machines, offspring2)
 genetic.evaluate(machines, standard, CNCs)
+genetic.show_pool(machines,[offspring2])
 
-genetic.show_pool(machines,[offspring1, offspring2])
 
 
 """

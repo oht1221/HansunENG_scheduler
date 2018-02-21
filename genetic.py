@@ -3,7 +3,7 @@ import time
 import AccessDB
 import copy
 import random
-POPULATION = 10
+POPULATION = 20
 chromosomes = list()
 LAST_JOB_EXECUTION = 0
 TOTAL_DELAYED_TIME = 0
@@ -54,7 +54,7 @@ def show_pool(machines, pool = None):
     for i, c in enumerate(pool):
         print(" -------------------------------------------- chromosome %d start -------------------------------------------- "%(i+1))
         for k, v in machines.items():
-            i = 0
+            newLine = 0
             print(k)
             for j in v:
                 print(end='|  ')
@@ -64,8 +64,8 @@ def show_pool(machines, pool = None):
                     print(j.getComponent(n).ifDone(), end=' ')
                 print(end=') ')
                 print(j.getTime(), end='  |')
-                i = (i + 1) % 3
-                if (i == 0): print(' ')
+                newLine = (newLine + 1) % 3
+                if (newLine == 0): print(' ')
             print(' ')
             print('\n')
         print(" -------------------------------------------- chromosome %d end -------------------------------------------- " % (i + 1))
@@ -172,18 +172,23 @@ def time_related_score(machines, standard):
     LAST_JOB_EXECUTION = 0
 
     for m in machines.values():
-        job_execution_time = standard
-        time_left_of_machine = sum([j.getTime() for j in m])
-        if time_left_of_machine > LAST_JOB_EXECUTION :
-            LAST_JOB_EXECUTION = time_left_of_machine
+        each_job_execution_time = standard
+        #time_left_of_machine = sum([j.getTime() for j in m])
+        time_left_of_machine = 0
+
         for j in m:
-            job_execution_time += j.getTime()
-            diff = j.getDue() - job_execution_time
+            each_job_execution_time += j.getTime()
+            time_left_of_machine += j.getTime()
+            diff = j.getDue() - each_job_execution_time
             print('----------')
+            print(j.getWorkno())
             print(j.getDue())
+            print('----------')
             if diff < 0:
                 TOTAL_DELAYED_JOBS_COUNT += 1
                 TOTAL_DELAYED_TIME += (-1) * diff
+        if time_left_of_machine > LAST_JOB_EXECUTION :
+            LAST_JOB_EXECUTION = time_left_of_machine
     return
 
 def size_type_related_score(machines, CNCs):
@@ -214,15 +219,19 @@ def evaluate(machines, standard, CNCs):
     global LAST_JOB_EXECUTION
     global TOTAL_DELAYED_JOBS_COUNT
     global TOTAL_DELAYED_TIME
+    TOTAL_DELAYED_TIME /= 10000
+    LAST_JOB_EXECUTION
     print("inappropriate_size_count: %d" %(INAPPROPRIATE_SIZE_COUNT))
     print("inappropriate_type_count: %d" %(INAPPROPRIATE_TYPE_COUNT))
-    print("last_job_execution: %d" % (INAPPROPRIATE_TYPE_COUNT))
-    print("total_delayed_jobs_count: %d" % (INAPPROPRIATE_TYPE_COUNT))
-    print("total_delayed_time: %d" % (INAPPROPRIATE_TYPE_COUNT))
+    print("last_job_execution: %d" % (LAST_JOB_EXECUTION))
+    print("total_delayed_jobs_count: %d" % (TOTAL_DELAYED_JOBS_COUNT))
+    print("total_delayed_time: %d" % (TOTAL_DELAYED_TIME))
+
     score = INAPPROPRIATE_SIZE_COUNT + INAPPROPRIATE_TYPE_COUNT + LAST_JOB_EXECUTION \
             + TOTAL_DELAYED_JOBS_COUNT + TOTAL_DELAYED_TIME
     print("score : %d" %(score))
-    score = INAPPROPRIATE_SIZE_COUNT + INAPPROPRIATE_TYPE_COUNT + LAST_JOB_EXECUTION\
-    + TOTAL_DELAYED_JOBS_COUNT + TOTAL_DELAYED_TIME
 
     return score
+
+def next_generation():
+
