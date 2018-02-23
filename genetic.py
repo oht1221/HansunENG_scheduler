@@ -1,8 +1,11 @@
 import scheduler
 import time
 import AccessDB
+import numpy as np
 import copy
 import random
+
+PROB = list()
 POPULATION = list()
 INTERPRETED_POPULATION = list()
 POPULATION_NUMBER = 20
@@ -26,12 +29,12 @@ def initial_permutation(pool):
         per.append(newElement)
     return per
 
-def order_corssover(parent_1, parent_2, start, end):
+def order_crossover(parent_1, parent_2, start, end):
     p1 = POPULATION[parent_1 - 1]
     p2 = POPULATION[parent_2 - 1]
     start = start - 1
     end = end - 1
-    offspring = copy.copy(p1)
+    offspring = copy.deepcopy(p1)
     not_selected = list(range(0, len(p2))) #p1에서
     for i in range(start, end+1):
         selected = p2.index(p1[i])
@@ -89,7 +92,7 @@ def interpret(machines, chromosome):
         position = position + 1
         i, direction = choose_next_machine(i, direction, len(machines) - 1)
     interpreted = copy.deepcopy(machines)
-    INTERPRETED_POPULATION.append(interpreted)
+    return interpreted
 
 def choose_next_machine(machineIndex, direction, upper_limit):
     next_machine = machineIndex
@@ -181,10 +184,6 @@ def time_related_score(machines, standard):
             each_job_execution_time += j.getTime()
             time_left_of_machine += j.getTime()
             diff = j.getDue() - each_job_execution_time
-            print('----------')
-            print(j.getWorkno())
-            print(j.getDue())
-            print('----------')
             if diff < 0:
                 TOTAL_DELAYED_JOBS_COUNT += 1
                 TOTAL_DELAYED_TIME += (-1) * diff
@@ -204,7 +203,7 @@ def size_type_related_score(machines, CNCs):
                 for j in m: #job과 CNC의 type이 일치하는지 확인
                     if j.getType() !=  c.getShape():
                         INAPPROPRIATE_TYPE_COUNT += 1
-                    if j.getSize() < c.getGround() and j.getSize() > c.getCeiling():
+                    if j.getSize() < c.getGround() or j.getSize() > c.getCeiling():
                         INAPPROPRIATE_SIZE_COUNT += 1
                 break
 
@@ -222,11 +221,7 @@ def evaluate(interpreted_chromosome, standard, CNCs):
     global TOTAL_DELAYED_TIME
     TOTAL_DELAYED_TIME /= 10000
     LAST_JOB_EXECUTION /= 10000
-    print("inappropriate_size_count: %d" %(INAPPROPRIATE_SIZE_COUNT))
-    print("inappropriate_type_count: %d" %(INAPPROPRIATE_TYPE_COUNT))
-    print("last_job_execution: %d" % (LAST_JOB_EXECUTION))
-    print("total_delayed_jobs_count: %d" % (TOTAL_DELAYED_JOBS_COUNT))
-    print("total_delayed_time: %d" % (TOTAL_DELAYED_TIME))
+
 
     score = INAPPROPRIATE_SIZE_COUNT + INAPPROPRIATE_TYPE_COUNT + LAST_JOB_EXECUTION \
             + TOTAL_DELAYED_JOBS_COUNT + TOTAL_DELAYED_TIME
@@ -234,9 +229,42 @@ def evaluate(interpreted_chromosome, standard, CNCs):
 
     return score
 
-def next_generation(machines, standard,CNCs):
+def next_generation(machines, standard, CNCs, TOTAL_NUMBER_OF_THE_POOL):
+    score_total = 0
+    rep = 0
+    new_population = []
     for chr in POPULATION:
-        interpret(machines, chr)
+        INTERPRETED_POPULATION.append(interpret(machines, chr))
+    for i, ichr in enumerate(INTERPRETED_POPULATION):
+        score = evaluate(ichr, standard, CNCs)
+        print("-------------------------------------- chromosome %d --------------------------------------")
+        print("inappropriate_size_count: %d" % (INAPPROPRIATE_SIZE_COUNT))
+        print("inappropriate_type_count: %d" % (INAPPROPRIATE_TYPE_COUNT))
+        print("last_job_execution: %d" % (LAST_JOB_EXECUTION))
+        print("total_delayed_jobs_count: %d" % (TOTAL_DELAYED_JOBS_COUNT))
+        print("total_delayed_time: %d" % (TOTAL_DELAYED_TIME))
+        print("total_score: %d" % (score))
+        print("-------------------------------------- chromosome %d --------------------------------------")
+        print("")
+
+        score_total += 1/score
+        PROB.append(1/score)
+    for p in PROB:
+        p = p / score_total
+        print(p, end = " ")
+
+    while POPULATION_NUMBER > rep:
+        parents = np.random.choice(POPULATION_NUMBER, 2, replace=False, p=PROB)
+        start = np.random.choice(POPULATION_NUMBER, 1)
+        end = start + TOTAL_NUMBER_OF_THE_POOL
+        p1 = parents[0] + 1
+        p2 = parents[1] + 1
+        print("parent 1 | parent 2 : %d | %d" %(p1, p2))
+        offspring = order_crossover(POPULATION[p1], POPULATION[p2], start, end)
+        new_population.append(offspring)
+        rep += 1
+
+    '''
     offspring1 = genetic.order_corssover(1, 2, 5, 18)
     genetic.interpret(machines, offspring1)
     genetic.evaluate(machines, standard, CNCs)
@@ -246,5 +274,4 @@ def next_generation(machines, standard,CNCs):
     genetic.interpret(machines, offspring2)
     genetic.evaluate(machines, standard, CNCs)
     genetic.show_pool(machines, [offspring2])
-
-    for ic in POPULATION:
+    '''

@@ -11,7 +11,7 @@ JOB_POOL = deque()
 READY_POOL = deque()
 IN_PROGRESS = deque()
 
-scheduler.make_job_pool(JOB_POOL)
+TOTAL_NUMBER_OF_THE_POOL = scheduler.make_job_pool(JOB_POOL)
 scheduler.read_CNCs('./hansun2.xlsx', CNCs)
 
 
@@ -23,16 +23,7 @@ standard = (lambda x: int(time.time()) if (x == 'now') else time.mktime(
     (int(x[0:4]), int(x[4:6]), int(x[6:8]), 12, 0, 0, 0, 0, 0)))(standard)
 standard = int(standard)
 genetic.initialize_mating_pool(JOB_POOL)
-#genetic.show_pool(machines)
-offspring1 = genetic.order_corssover(1,2,5,18)
-genetic.interpret(machines, offspring1)
-genetic.evaluate(machines, standard, CNCs)
-genetic.show_pool(machines,[offspring1])
-
-offspring2 = genetic.order_corssover(3,4,13,26)
-genetic.interpret(machines, offspring2)
-genetic.evaluate(machines, standard, CNCs)
-genetic.show_pool(machines,[offspring2])
+genetic.next_generation(machines, standard, CNCs, TOTAL_NUMBER_OF_THE_POOL)
 
 
 
