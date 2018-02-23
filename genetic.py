@@ -3,8 +3,9 @@ import time
 import AccessDB
 import copy
 import random
-POPULATION = 20
-chromosomes = list()
+POPULATION = list()
+INTERPRETED_POPULATION = list()
+POPULATION_NUMBER = 20
 LAST_JOB_EXECUTION = 0
 TOTAL_DELAYED_TIME = 0
 TOTAL_DELAYED_JOBS_COUNT = 0
@@ -12,8 +13,8 @@ INAPPROPRIATE_SIZE_COUNT = 0
 INAPPROPRIATE_TYPE_COUNT = 0
 
 def initialize_mating_pool(job_pool):
-    for i in range(POPULATION):
-        chromosomes.append(initial_permutation(job_pool))
+    for i in range(POPULATION_NUMBER):
+        POPULATION.append(initial_permutation(job_pool))
 
 def initial_permutation(pool):
     per = list()
@@ -26,8 +27,8 @@ def initial_permutation(pool):
     return per
 
 def order_corssover(parent_1, parent_2, start, end):
-    p1 = chromosomes[parent_1 - 1]
-    p2 = chromosomes[parent_2 - 1]
+    p1 = POPULATION[parent_1 - 1]
+    p2 = POPULATION[parent_2 - 1]
     start = start - 1
     end = end - 1
     offspring = copy.copy(p1)
@@ -50,7 +51,7 @@ def order_corssover(parent_1, parent_2, start, end):
 
 def show_pool(machines, pool = None):
     if pool == None:
-        pool = chromosomes
+        pool = POPULATION
     for i, c in enumerate(pool):
         print(" -------------------------------------------- chromosome %d start -------------------------------------------- "%(i+1))
         for k, v in machines.items():
@@ -87,8 +88,8 @@ def interpret(machines, chromosome):
             break
         position = position + 1
         i, direction = choose_next_machine(i, direction, len(machines) - 1)
-
-    #evaluate(machines, chromosome, CNCs)
+    interpreted = copy.deepcopy(machines)
+    INTERPRETED_POPULATION.append(interpreted)
 
 def choose_next_machine(machineIndex, direction, upper_limit):
     next_machine = machineIndex
@@ -134,7 +135,7 @@ def show_chromosome(chromosome):
     print('\n')
 
 def show_chromosomes():
-    for c in chromosomes:
+    for c in POPULATION:
         show_chromosome(c)
 '''def next_generation(chromosomes):
     order_corssover(parent_1, parent_2, start, end)'''
@@ -209,10 +210,10 @@ def size_type_related_score(machines, CNCs):
 
     return
 
-def evaluate(machines, standard, CNCs):
+def evaluate(interpreted_chromosome, standard, CNCs):
 
-    time_related_score(machines, standard)
-    size_type_related_score(machines, CNCs)
+    time_related_score(interpreted_chromosome, standard)
+    size_type_related_score(interpreted_chromosome, CNCs)
 
     global INAPPROPRIATE_SIZE_COUNT
     global INAPPROPRIATE_TYPE_COUNT
@@ -220,7 +221,7 @@ def evaluate(machines, standard, CNCs):
     global TOTAL_DELAYED_JOBS_COUNT
     global TOTAL_DELAYED_TIME
     TOTAL_DELAYED_TIME /= 10000
-    LAST_JOB_EXECUTION
+    LAST_JOB_EXECUTION /= 10000
     print("inappropriate_size_count: %d" %(INAPPROPRIATE_SIZE_COUNT))
     print("inappropriate_type_count: %d" %(INAPPROPRIATE_TYPE_COUNT))
     print("last_job_execution: %d" % (LAST_JOB_EXECUTION))
@@ -233,5 +234,17 @@ def evaluate(machines, standard, CNCs):
 
     return score
 
-def next_generation():
+def next_generation(machines, standard,CNCs):
+    for chr in POPULATION:
+        interpret(machines, chr)
+    offspring1 = genetic.order_corssover(1, 2, 5, 18)
+    genetic.interpret(machines, offspring1)
+    genetic.evaluate(machines, standard, CNCs)
+    genetic.show_pool(machines, [offspring1])
 
+    offspring2 = genetic.order_corssover(3, 4, 13, 26)
+    genetic.interpret(machines, offspring2)
+    genetic.evaluate(machines, standard, CNCs)
+    genetic.show_pool(machines, [offspring2])
+
+    for ic in POPULATION:
