@@ -219,8 +219,8 @@ def evaluate(interpreted_chromosome, standard, CNCs):
     global LAST_JOB_EXECUTION
     global TOTAL_DELAYED_JOBS_COUNT
     global TOTAL_DELAYED_TIME
-    TOTAL_DELAYED_TIME /= 10000
-    LAST_JOB_EXECUTION /= 10000
+    TOTAL_DELAYED_TIME /= 100000
+    LAST_JOB_EXECUTION /= 100000
 
 
     score = INAPPROPRIATE_SIZE_COUNT + INAPPROPRIATE_TYPE_COUNT + LAST_JOB_EXECUTION \
@@ -230,28 +230,38 @@ def evaluate(interpreted_chromosome, standard, CNCs):
     return score
 
 def next_generation(machines, standard, CNCs, TOTAL_NUMBER_OF_THE_POOL):
-    score_total = 0
+    fitness_total = 0
     rep = 0
     new_population = []
     for chr in POPULATION:
         INTERPRETED_POPULATION.append(interpret(machines, chr))
     for i, ichr in enumerate(INTERPRETED_POPULATION):
         score = evaluate(ichr, standard, CNCs)
-        print("-------------------------------------- chromosome %d --------------------------------------")
-        print("inappropriate_size_count: %d" % (INAPPROPRIATE_SIZE_COUNT))
-        print("inappropriate_type_count: %d" % (INAPPROPRIATE_TYPE_COUNT))
-        print("last_job_execution: %d" % (LAST_JOB_EXECUTION))
-        print("total_delayed_jobs_count: %d" % (TOTAL_DELAYED_JOBS_COUNT))
-        print("total_delayed_time: %d" % (TOTAL_DELAYED_TIME))
-        print("total_score: %d" % (score))
-        print("-------------------------------------- chromosome %d --------------------------------------")
+        print("-------------------------------------- chromosome %d --------------------------------------"%(i+1))
+        print("inappropriate_size_count: %d" %(INAPPROPRIATE_SIZE_COUNT))
+        print("inappropriate_type_count: %d" %(INAPPROPRIATE_TYPE_COUNT))
+        print("last_job_execution: %d" %(LAST_JOB_EXECUTION))
+        print("total_delayed_jobs_count: %d" %(TOTAL_DELAYED_JOBS_COUNT))
+        print("total_delayed_time: %d" %(TOTAL_DELAYED_TIME))
+        print("total_score: %d" %(score))
+        print("-------------------------------------- chromosome %d --------------------------------------"%(i+1))
         print("")
 
-        score_total += 1/score
-        PROB.append(1/score)
-    for p in PROB:
-        p = p / score_total
-        print(p, end = " ")
+        fitness = 1/score
+        fitness_total = fitness_total + fitness
+        PROB.append(fitness)
+    print("fitness_total : %lf" %(fitness_total))
+    summ = 0
+    for i, p in enumerate(PROB):
+        if i != len(PROB) - 1:
+            PROB[i] = PROB[i] / fitness_total
+        else:
+            PROB[i] = 1 - summ
+        summ += PROB[i]
+        print(p)
+        print(summ)
+
+    print(PROB)
 
     while POPULATION_NUMBER > rep:
         parents = np.random.choice(POPULATION_NUMBER, 2, replace=False, p=PROB)
