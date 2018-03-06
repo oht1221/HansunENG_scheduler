@@ -139,7 +139,7 @@ def make_job_pool(job_pool):
     total_number = len(job_pool)
     print("the total # of job : %d"%(total_number))
 
-    return total_number / 2
+    return total_number
 
 def search_cycle_time(cursor, cycle_time, GoodCd, Gubun, deli_start, deli_end):
     flag1 = 0
