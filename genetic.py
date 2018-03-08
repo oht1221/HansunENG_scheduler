@@ -122,7 +122,9 @@ def show_chromosomes(output):
 
 def order_crossover(parent_1, parent_2, start, end):
     p1 = POPULATION[parent_1]
+    print(p1)
     p2 = POPULATION[parent_2]
+    print(p2)
     start = start
     end = end
     offspring = []
@@ -238,8 +240,6 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
     global POPULATION
     global SCORE_AVG
     global LAST_GENERATION
-    print((POPULATION[0])[10].getWorkno())
-    print((POPULATION[1])[10].getWorkno())
     SCORE_AVG = 0
     new_population = []
     INTERPRETED_POPULATION.clear()
@@ -292,14 +292,15 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
     while POPULATION_NUMBER > chrN:
         print(chrN)
         parents = np.random.choice(POPULATION_NUMBER, 2, replace=False, p=PROB)
-        rate = 1 + 0.6 * float(genN / LAST_GENERATION)
+        #rate = 1 + 0.6 * float(genN / LAST_GENERATION)
         p1 = parents[0]
         p2 = parents[1]
         print(p1)
         print(p2)
-        start = np.random.choice(int(pool_size / 2), 1)
-        start = start[0]
-        end = int(start + (pool_size * rate) / 2)
+        #start = np.random.choice(int(pool_size / 2), 1)
+        start = 5#start[0]
+        #end = int(start + (pool_size * rate) / 2)
+        end = int(start + pool_size / 2)
         print(start)
         print(end)
         '''output.write("-------- crossover #%d --------\n"%rep + str(start + 1))
