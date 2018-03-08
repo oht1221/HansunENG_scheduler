@@ -8,7 +8,8 @@ import random
 PROB = list()
 POPULATION = list()
 INTERPRETED_POPULATION = list()
-POPULATION_NUMBER = 20
+POPULATION_NUMBER = 30
+LAST_GENERATION = 10000
 LAST_JOB_EXECUTION = 0
 TOTAL_DELAYED_TIME = 0
 TOTAL_DELAYED_JOBS_COUNT = 0
@@ -29,31 +30,6 @@ def initial_permutation(pool):
             continue
         per.append(newElement)
     return per
-
-def order_crossover(parent_1, parent_2, start, end):
-    p1 = POPULATION[parent_1]
-    p2 = POPULATION[parent_2]
-    start = start
-    end = end
-    offspring = []
-    for j in p1:
-        offspring.append(j)
-    not_selected = list(range(0, len(p2))) #p1에서
-    for i in range(start, end+1):
-        selected = p2.index(p1[i])
-        not_selected.remove(selected)#여기서 선택 안된 것은 p2에서 선택할 것들
-    i = end + 1
-    j = end + 1
-    while 1:
-        if i%len(p2) in not_selected:
-            offspring[j%len(offspring)] = p2[i%len(p2)]
-            not_selected.remove(i%len(p2))
-            j = j + 1
-        i = i + 1
-        if not not_selected:
-            break
-
-    return offspring
 
 def show_pool(machines, pool = None):
     if pool == None:
@@ -144,6 +120,31 @@ def show_chromosomes(output):
 '''def next_generation(chromosomes):
     order_corssover(parent_1, parent_2, start, end)'''
 
+def order_crossover(parent_1, parent_2, start, end):
+    p1 = POPULATION[parent_1]
+    p2 = POPULATION[parent_2]
+    start = start
+    end = end
+    offspring = []
+    for j in p1:
+        offspring.append(j)
+    not_selected = list(range(0, len(p2))) #p1에서
+    for i in range(start, end+1):
+        selected = p2.index(p1[i])
+        not_selected.remove(selected)#여기서 선택 안된 것은 p2에서 선택할 것들
+    i = end + 1
+    j = end + 1
+    while 1:
+        if i%len(p2) in not_selected:
+            offspring[j%len(offspring)] = p2[i%len(p2)]
+            not_selected.remove(i%len(p2))
+            j = j + 1
+        i = i + 1
+        if not not_selected:
+            break
+
+    return offspring
+
 def inversion_mutation(chromosome):
     position = random.randrange(0, len(chromosome))
     left = chromosome[position - 1]
@@ -211,7 +212,6 @@ def size_type_related_score(machines, CNCs):
     return
 
 def evaluate(interpreted_chromosome, standard, CNCs):
-
     time_related_score(interpreted_chromosome, standard)
     size_type_related_score(interpreted_chromosome, CNCs)
 
@@ -222,49 +222,59 @@ def evaluate(interpreted_chromosome, standard, CNCs):
     global TOTAL_DELAYED_TIME
     TOTAL_DELAYED_TIME /= 10000
     LAST_JOB_EXECUTION /= 10000
-
+    INAPPROPRIATE_TYPE_COUNT *= 10
+    INAPPROPRIATE_SIZE_COUNT *= 2
+    TOTAL_DELAYED_JOBS_COUNT *= 1000
 
     score = INAPPROPRIATE_SIZE_COUNT + INAPPROPRIATE_TYPE_COUNT + LAST_JOB_EXECUTION \
             + TOTAL_DELAYED_JOBS_COUNT + TOTAL_DELAYED_TIME
 
     return score
 
-def next_generation(machines, standard, CNCs, TOTAL_NUMBER_OF_THE_POOL, repetition):
+def next_generation(machines, standard, CNCs, pool_size, genN):
+
     fitness_total = 0
-    rep = 0
     summ = 0
     global POPULATION
     global SCORE_AVG
+    global LAST_GENERATION
+    print((POPULATION[0])[10].getWorkno())
+    print((POPULATION[1])[10].getWorkno())
     SCORE_AVG = 0
     new_population = []
     INTERPRETED_POPULATION.clear()
     PROB.clear()
-    output = open("./results/generation_%d_result.txt"%repetition, "w")
+    if genN % 500 == 0:
+        output = open("./results/generation_%d_result.txt"%genN, "w")
+    else :
+        output = None
+    # 50의 배수 repetition마다 output 파일 생성
 
     for i, chr in enumerate(POPULATION):
-        output.write("------------------- chromosome %d -------------------\n" % (i + 1))
-        show_chromosome(chr, output)
-        output.write("------------------- chromosome %d -------------------\n\n"%(i+1))
+        #output.write("------------------- chromosome %d -------------------\n" % (i + 1))
+        #show_chromosome(chr, output)
+        #output.write("------------------- chromosome %d -------------------\n\n"%(i+1))
         INTERPRETED_POPULATION.append(interpret(machines, chr))
     for i, ichr in enumerate(INTERPRETED_POPULATION):
         score = evaluate(ichr, standard, CNCs)
-        output.write("score : %d\n" % (score))
         SCORE_AVG += score
-        output.write("------------------- chromosome %d -------------------\n"%(i+1))
-        output.write("inappropriate_size_count: %d\n" %(INAPPROPRIATE_SIZE_COUNT))
-        output.write("inappropriate_type_count: %d\n" %(INAPPROPRIATE_TYPE_COUNT))
-        output.write("last_job_execution: %d\n" %(LAST_JOB_EXECUTION))
-        output.write("total_delayed_jobs_count: %d\n" %(TOTAL_DELAYED_JOBS_COUNT))
-        output.write("total_delayed_time: %d\n" %(TOTAL_DELAYED_TIME))
-        output.write("total_score: %d\n" %(score))
-        output.write("------------------- chromosome %d -------------------\n"%(i+1))
-        output.write("\n")
-        fitness = 1/score
+        fitness = 1 / score
         fitness_total = fitness_total + fitness
         PROB.append(fitness)
+        if output != None: #파일이 열려있으면
+            output.write("------------------- chromosome %d -------------------\n" % (i + 1))
+            output.write("inappropriate_size_count: %d\n" % (INAPPROPRIATE_SIZE_COUNT))
+            output.write("inappropriate_type_count: %d\n" % (INAPPROPRIATE_TYPE_COUNT))
+            output.write("last_job_execution: %d\n" % (LAST_JOB_EXECUTION))
+            output.write("total_delayed_jobs_count: %d\n" % (TOTAL_DELAYED_JOBS_COUNT))
+            output.write("total_delayed_time: %d\n" % (TOTAL_DELAYED_TIME))
+            output.write("total_score: %d\n" % (score))
+            output.write("------------------- chromosome %d -------------------\n" % (i + 1))
+            output.write("\n")
 
     SCORE_AVG = SCORE_AVG / POPULATION_NUMBER
-    output.write("score average of the generation : %d\n" %(SCORE_AVG))
+    if output != None:
+        output.write("score average of the generation : %d\n" %(SCORE_AVG))
     #print("fitness_total : %lf" %(fitness_total))
 
     for i, p in enumerate(PROB):
@@ -273,23 +283,35 @@ def next_generation(machines, standard, CNCs, TOTAL_NUMBER_OF_THE_POOL, repetiti
         else:
             PROB[i] = 1 - summ
         summ += PROB[i]
-
+    '''
     for p in PROB:
         output.write(str(p) + " | ")
     output.write("\n\n")
-
-    while POPULATION_NUMBER > rep:
+    '''
+    chrN = 0
+    while POPULATION_NUMBER > chrN:
+        print(chrN)
         parents = np.random.choice(POPULATION_NUMBER, 2, replace=False, p=PROB)
+        rate = 1 + 0.6 * float(genN / LAST_GENERATION)
         p1 = parents[0]
         p2 = parents[1]
-        start = np.random.choice(int(TOTAL_NUMBER_OF_THE_POOL / 2), 1)
+        print(p1)
+        print(p2)
+        start = np.random.choice(int(pool_size / 2), 1)
         start = start[0]
-        output.write("-------- crossover #%d --------\n"%rep + str(start + 1))
-        end = start + int(TOTAL_NUMBER_OF_THE_POOL / 2)
+        end = int(start + (pool_size * rate) / 2)
+        print(start)
+        print(end)
+        '''output.write("-------- crossover #%d --------\n"%rep + str(start + 1))
         output.write("\n" + str(end) + "\nparent 1 | parent 2 : %d | %d\n" %(p1+1, p2+1))
-        output.write("\n-------- crossover #%d --------\n"%rep)
+        output.write("\n-------- crossover #%d --------\n"%rep)'''
         offspring = order_crossover(p1, p2, start, end)
         new_population.append(offspring)
-        rep += 1
+        chrN += 1
 
     POPULATION = new_population
+def evolution(machines, standard, CNCs, pool_size):
+    genN = 0
+    while genN < LAST_GENERATION:
+        next_generation(machines, standard, CNCs, pool_size, genN)
+        genN += 1

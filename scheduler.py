@@ -377,7 +377,7 @@ def update(CNCs, unitTime, ready_pool, in_progress):
             continue
         for i in range(len(job.getSeries())):
             component = job.getComponent(i)
-            if not component.ifDone():  #3개의 콤포넌트 중 아직 안끝난 것이 나오면
+            if not component.ifDone():  #3개의 콤포넌트 중 아W직 안끝난 것이 나오면
                 component.spendTime(unitTime) #주어진 unitTime만큼 뺌
                 break
             if(i == len(job.getSeries()) - 1):  ##마지막 콤포넌트까지 모두 done이면

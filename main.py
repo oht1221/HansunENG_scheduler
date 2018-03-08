@@ -5,7 +5,7 @@ import cnc
 import AccessDB
 from collections import deque
 
-REPETITION = 2
+
 CNCs = []
 JOB_POOL = deque()
 READY_POOL = deque()
@@ -23,11 +23,7 @@ standard = (lambda x: int(time.time()) if (x == 'now') else time.mktime(
     (int(x[0:4]), int(x[4:6]), int(x[6:8]), 12, 0, 0, 0, 0, 0)))(standard)
 standard = int(standard)
 genetic.initialize_mating_pool(JOB_POOL)
-rep = 0
-while rep < REPETITION:
-    genetic.next_generation(machines, standard, CNCs, TOTAL_NUMBER_OF_THE_POOL, rep)
-    rep += 1
-
+genetic.evolution(machines, standard, CNCs, TOTAL_NUMBER_OF_THE_POOL)
 """
 while(1):
     machines= {}
