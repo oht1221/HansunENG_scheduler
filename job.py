@@ -16,6 +16,8 @@ class Job:
         self.due  = due
         self.cnc = None
         self.msg = None
+        self.startDate = None
+        self.endDate = None
 
     def ifAllDone(self):
         return np.all([(self.getSeries())[i].ifDone() for i in range(len(self.getSeries()))])
@@ -29,8 +31,8 @@ class Job:
     def getSeries(self):
         return self.series
 
-    def getComponent(self, n):
-        return self.series[n]
+    def getComponent(self):
+        return self.series
 
     def getSize(self):
         return self.size
@@ -54,6 +56,7 @@ class Job:
     def setMsg(self, msg):
         self.msg = msg
 
+
 class Component:
     def __init__(self, cycleTime, job, quantity):
         self.cycleTime = cycleTime
@@ -62,6 +65,8 @@ class Component:
         self.count = 0 #count가 cycletime 만큼 올라가면 제품 하나를 완성했다고 가정
         self.quantity = quantity
         self.timeLeft = cycleTime * quantity
+        self.endDateTime = None
+        self.startDateTime = None
 
     def spendTime(self, unitTime):
         self.timeLeft = self.timeLeft - unitTime
@@ -78,6 +83,12 @@ class Component:
     def getTime(self):
         return self.timeLeft
 
+    def getStartDateTime(self):
+        return self.startDateTime
+
+    def getEndDateTime(self):
+        return self.endDateTime
+
     def ifDone(self):
         return self.done
 
@@ -89,6 +100,12 @@ class Component:
 
     def setTime(self, time):
         self.timeLeft = time
+
+    def setStartDateTime(self, start):
+        self.startDateTime = start
+
+    def setEndDateTime(self, end):
+        self.endDateTime = end
 
 """
 class NormalCompoenet(Component):

@@ -1,5 +1,7 @@
 import scheduler
+import xlwt
 import time
+import datetime
 import AccessDB
 import numpy as np
 import copy
@@ -17,7 +19,7 @@ INAPPROPRIATE_SIZE_COUNT = 0
 INAPPROPRIATE_TYPE_COUNT = 0
 SCORE_AVG = 0
 
-def initialize_mating_pool(job_pool):
+def initialize_population(job_pool):
     for i in range(POPULATION_NUMBER):
         POPULATION.append(initial_permutation(job_pool))
 
@@ -185,9 +187,17 @@ def time_related_score(machines, standard):
         time_left_of_machine = 0
 
         for j in m:
+            component_start_time = each_job_execution_time
             each_job_execution_time += j.getTime()
             time_left_of_machine += j.getTime()
             diff = j.getDue() - each_job_execution_time
+            for comp in j.getComponent():
+                startTime = datetime.datetime.min + datetime.timedelta(seconds = int(component_start_time))
+                endTime = datetime.datetime.min + datetime.timedelta(seconds = int(component_start_time + comp.getTime()))
+                comp.setStartDateTime(startTime)
+                comp.setEndDateTime(endTime)
+                component_start_time += comp.getTime()
+
             if diff < 0:
                 TOTAL_DELAYED_JOBS_COUNT += 1
                 TOTAL_DELAYED_TIME += (-1) * diff
@@ -245,9 +255,13 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
     INTERPRETED_POPULATION.clear()
     PROB.clear()
     if genN % 500 == 0:
-        output = open("./results/generation_%d_result.txt"%genN, "w")
+        output1 = open("./results/generation_%d_result.txt"%genN, "w")
+        output2 = xlwt.Workbook(encoding='utf-8')  # utf-8 인코딩 방식의 workbook 생성
+        output2.default_style.font.height = 20 * 11  # (11pt) 기본폰트설정 다양한건 찾아보길
+        font_style = xlwt.easyxf('font: height 280, bold 1;')  # 폰트 스타일 생성
     else :
-        output = None
+        output1 = None
+        output2 = None
     # 50의 배수 repetition마다 output 파일 생성
 
     for i, chr in enumerate(POPULATION):
@@ -255,26 +269,38 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
         #show_chromosome(chr, output)
         #output.write("------------------- chromosome %d -------------------\n\n"%(i+1))
         INTERPRETED_POPULATION.append(interpret(machines, chr))
+
     for i, ichr in enumerate(INTERPRETED_POPULATION):
+        if output2 != None and i == 0:
+            schedule = ichr
+            for key, value in schedule.items():
+                worksheet = output2.add_sheet(str(key))  # 시트 생성
+                row = 0
+                for i, job in enumerate(value):
+                    if i == 0:
+                        row = print_job_schedule(i, job, worksheet)
+                    else:
+                        row = print_job_schedule(row + 1, job, worksheet)
+            output2.save("schedule.xls")  # 엑셀 파일 저장 및 생성
         score = evaluate(ichr, standard, CNCs)
         SCORE_AVG += score
         fitness = 1 / score
         fitness_total = fitness_total + fitness
         PROB.append(fitness)
-        if output != None: #파일이 열려있으면
-            output.write("------------------- chromosome %d -------------------\n" % (i + 1))
-            output.write("inappropriate_size_count: %d\n" % (INAPPROPRIATE_SIZE_COUNT))
-            output.write("inappropriate_type_count: %d\n" % (INAPPROPRIATE_TYPE_COUNT))
-            output.write("last_job_execution: %d\n" % (LAST_JOB_EXECUTION))
-            output.write("total_delayed_jobs_count: %d\n" % (TOTAL_DELAYED_JOBS_COUNT))
-            output.write("total_delayed_time: %d\n" % (TOTAL_DELAYED_TIME))
-            output.write("total_score: %d\n" % (score))
-            output.write("------------------- chromosome %d -------------------\n" % (i + 1))
-            output.write("\n")
+        if output1 != None: #파일이 열려있으면
+            output1.write("------------------- chromosome %d -------------------\n" % (i + 1))
+            output1.write("inappropriate_size_count: %d\n" % (INAPPROPRIATE_SIZE_COUNT))
+            output1.write("inappropriate_type_count: %d\n" % (INAPPROPRIATE_TYPE_COUNT))
+            output1.write("last_job_execution: %d\n" % (LAST_JOB_EXECUTION))
+            output1.write("total_delayed_jobs_count: %d\n" % (TOTAL_DELAYED_JOBS_COUNT))
+            output1.write("total_delayed_time: %d\n" % (TOTAL_DELAYED_TIME))
+            output1.write("total_score: %d\n" % (score))
+            output1.write("------------------- chromosome %d -------------------\n" % (i + 1))
+            output1.write("\n")
 
     SCORE_AVG = SCORE_AVG / POPULATION_NUMBER
-    if output != None:
-        output.write("score average of the generation : %d\n" %(SCORE_AVG))
+    if output1 != None:
+        output1.write("score average of the generation : %d\n" %(SCORE_AVG))
     #print("fitness_total : %lf" %(fitness_total))
 
     for i, p in enumerate(PROB):
@@ -295,14 +321,12 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
         #rate = 1 + 0.6 * float(genN / LAST_GENERATION)
         p1 = parents[0]
         p2 = parents[1]
-        print(p1)
-        print(p2)
+
         #start = np.random.choice(int(pool_size / 2), 1)
         start = 5#start[0]
         #end = int(start + (pool_size * rate) / 2)
         end = int(start + pool_size / 2)
-        print(start)
-        print(end)
+
         '''output.write("-------- crossover #%d --------\n"%rep + str(start + 1))
         output.write("\n" + str(end) + "\nparent 1 | parent 2 : %d | %d\n" %(p1+1, p2+1))
         output.write("\n-------- crossover #%d --------\n"%rep)'''
@@ -316,3 +340,14 @@ def evolution(machines, standard, CNCs, pool_size):
     while genN < LAST_GENERATION:
         next_generation(machines, standard, CNCs, pool_size, genN)
         genN += 1
+
+def print_job_schedule(row, job, worksheet, start, end):
+    for i, comp in enumerate(job.getComponent()):
+        start = comp.getStartDateTime()
+        end = comp.getEndDateTime()
+        worksheet.write(row + i, 0, job.getWorkno())
+        worksheet.write(row + i, 1, "P%d"%(i+1))
+        worksheet.write(row + i, 2, job.getGoodNum())
+        worksheet.write(row + i, 3, start)
+        worksheet.write(row + i, 4, end)
+    return row + i
