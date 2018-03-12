@@ -276,19 +276,16 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
         fitness = 1 / score
         fitness_total = fitness_total + fitness
         PROB.append(fitness)
-
+        '''xcel로 아웃풋 만드는 부분'''
         if output2 != None and i == 0:
             schedule = ichr
             for key, value in schedule.items():
                 worksheet = output2.add_sheet(str(key))  # 시트 생성
-                row = 0
+                row = print_job_schedule(0, worksheet)
                 for i, job in enumerate(value):
-                    if i == 0:
-                        row = print_job_schedule(i, job, worksheet)
-                    else:
-                        row = print_job_schedule(row + 1, job, worksheet)
+                    row = print_job_schedule(row, worksheet, job)
             output2.save("schedule.xls")  # 엑셀 파일 저장 및 생성
-
+        '''xcel로 아웃풋 만드는 부분'''
         if output1 != None: #파일이 열려있으면
             output1.write("------------------- chromosome %d -------------------\n" % (i + 1))
             output1.write("inappropriate_size_count: %d\n" % (INAPPROPRIATE_SIZE_COUNT))
@@ -344,8 +341,16 @@ def evolution(machines, standard, CNCs, pool_size):
         next_generation(machines, standard, CNCs, pool_size, genN)
         genN += 1
 
-def print_job_schedule(row, job, worksheet):
-    how_many_components = 0
+def print_job_schedule(row, worksheet, job = None):
+    if row == 0:
+        worksheet.write(row, 0, "작업지시서 번호")
+        worksheet.write(row, 1, "공정")
+        worksheet.write(row, 2, "품번")
+        worksheet.write(row, 3, "시작")
+        worksheet.write(row, 4, "종료")
+        return row + 1
+
+    row_move = 0
     for i, comp in enumerate(job.getComponent()):
         start = comp.getStartDateTime()
         end = comp.getEndDateTime()
@@ -354,5 +359,5 @@ def print_job_schedule(row, job, worksheet):
         worksheet.write(row + i, 2, job.getGoodNum())
         worksheet.write(row + i, 3, start)
         worksheet.write(row + i, 4, end)
-        how_many_components = i
-    return row + how_many_components
+        row_move = i
+    return row + row_move + 1
