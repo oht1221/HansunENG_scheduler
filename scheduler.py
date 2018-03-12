@@ -156,7 +156,7 @@ def make_job_pool(job_pool):
         due_date_seconds = time.mktime((int(due_date[0:4]), int(due_date[4:6]), int(due_date[6:8]), 12, 0, 0, 0, 0, 0)) # 정오 기준
         due_date_seconds = int(due_date_seconds)
         GoodCd = row[3]
-        cycle_time = [0,0,0]
+        cycle_time = []
         try :
             spec = float((row[7].split('-'))[0]) #숫자(-문자) 형식 아닌 spec이 나오면 무시
         except ValueError:
@@ -179,7 +179,7 @@ def search_cycle_time(cursor, cycle_time, GoodCd, Gubun, deli_start, deli_end):
     flag2 = 0
     if Gubun == 1:
         flag3 = 1
-    elif Gubun == 0: # Gubun = 0 이면 3차 가공까지
+    else: # Gubun == 0: # Gubun = 0 이면 3차 가공까지
         flag3 = 0
 
     cursor.execute("""
@@ -212,13 +212,13 @@ def search_cycle_time(cursor, cycle_time, GoodCd, Gubun, deli_start, deli_end):
     while(row):
         processcd = row[6].strip()
         if processcd == 'P1' and flag1 == 0:
-            cycle_time[0] = int(row[7])
+            cycle_time.append(int(row[7]))
             flag1 = 1
         elif processcd == 'P2' and flag2 == 0:
-            cycle_time[1] = int(row[7])
+            cycle_time.append(int(row[7]))
             flag2 = 1
         elif processcd == 'P3' and flag3 == 0:
-            cycle_time[2] = int(row[7])
+            cycle_time.append(int(row[7]))
             flag3 = 1
         if flag1 == 1 and flag2 == 1 and flag3 == 1:
             break

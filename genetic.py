@@ -271,6 +271,12 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
         INTERPRETED_POPULATION.append(interpret(machines, chr))
 
     for i, ichr in enumerate(INTERPRETED_POPULATION):
+        score = evaluate(ichr, standard, CNCs)
+        SCORE_AVG += score
+        fitness = 1 / score
+        fitness_total = fitness_total + fitness
+        PROB.append(fitness)
+
         if output2 != None and i == 0:
             schedule = ichr
             for key, value in schedule.items():
@@ -282,11 +288,7 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
                     else:
                         row = print_job_schedule(row + 1, job, worksheet)
             output2.save("schedule.xls")  # 엑셀 파일 저장 및 생성
-        score = evaluate(ichr, standard, CNCs)
-        SCORE_AVG += score
-        fitness = 1 / score
-        fitness_total = fitness_total + fitness
-        PROB.append(fitness)
+
         if output1 != None: #파일이 열려있으면
             output1.write("------------------- chromosome %d -------------------\n" % (i + 1))
             output1.write("inappropriate_size_count: %d\n" % (INAPPROPRIATE_SIZE_COUNT))
@@ -335,13 +337,15 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
         chrN += 1
 
     POPULATION = new_population
+
 def evolution(machines, standard, CNCs, pool_size):
     genN = 0
     while genN < LAST_GENERATION:
         next_generation(machines, standard, CNCs, pool_size, genN)
         genN += 1
 
-def print_job_schedule(row, job, worksheet, start, end):
+def print_job_schedule(row, job, worksheet):
+    how_many_components = 0
     for i, comp in enumerate(job.getComponent()):
         start = comp.getStartDateTime()
         end = comp.getEndDateTime()
@@ -350,4 +354,5 @@ def print_job_schedule(row, job, worksheet, start, end):
         worksheet.write(row + i, 2, job.getGoodNum())
         worksheet.write(row + i, 3, start)
         worksheet.write(row + i, 4, end)
-    return row + i
+        how_many_components = i
+    return row + how_many_components

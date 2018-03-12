@@ -3,11 +3,11 @@ import random
 import numpy as np
 
 class Job:
-    def __init__(self, workno, good_num, quantity ,type = None, size = None,  workdate = None, time = [0,0,0], due = 0):
+    def __init__(self, workno, good_num, quantity, time ,type = None, size = None,  workdate = None, due = 0):
         self.workno = workno
         self.worodate = workdate
         self.good_num = good_num
-        self.timeLeft = sum(time) * quantity + 60*60*24*5 + 60*60 #타공정 소요시간 + 새셋팅 시간
+        self.timeLeft = sum(time) * quantity # (60*60)*(24)*(5) + (60*60) #타공정 소요시간 + 새셋팅 시간
         self.type = type
         self.size = size
         self.quantity = quantity
@@ -64,7 +64,7 @@ class Component:
         self.partOf = job
         self.count = 0 #count가 cycletime 만큼 올라가면 제품 하나를 완성했다고 가정
         self.quantity = quantity
-        self.timeLeft = cycleTime * quantity
+        self.timeLeft = cycleTime
         self.endDateTime = None
         self.startDateTime = None
 
@@ -107,6 +107,11 @@ class Component:
     def setEndDateTime(self, end):
         self.endDateTime = end
 
+    def completeOnePiece(self):
+        self.count += 1
+        self.quantity -= 1
+
+        return self.quantity
 """
 class NormalCompoenet(Component):
     def __init__(self, cycleTime, job, quantity):
