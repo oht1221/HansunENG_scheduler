@@ -271,6 +271,7 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
         #output.write("------------------- chromosome %d -------------------\n\n"%(i+1))
         INTERPRETED_POPULATION.append(interpret(machines, chr))
 
+
     for i, ichr in enumerate(INTERPRETED_POPULATION):
         score = evaluate(ichr, standard, CNCs)
         SCORE_AVG += score
@@ -318,12 +319,12 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
     while POPULATION_NUMBER > chrN:
         print(chrN)
         parents = np.random.choice(POPULATION_NUMBER, 2, replace=False, p=PROB)
-        rate = 1 + 0.6 * float(genN / LAST_GENERATION)
+        rate = 1 + 0.8  * float(genN / LAST_GENERATION) #crossover시 초반에는 50%를 보존, 최후에는 90% 보존
         p1 = parents[0]
         p2 = parents[1]
-        start = np.random.choice(int(pool_size / 2), 1)
-        start = start[0]
-        end = int(start + (pool_size * rate) / 2)
+        end = np.random.choice(pool_size, 1)
+        end = int(end[0])
+        start = int(end - (pool_size * rate) / 2)
         #end = int(start + pool_size / 2)
 
         '''output.write("-------- crossover #%d --------\n"%rep + str(start + 1))
