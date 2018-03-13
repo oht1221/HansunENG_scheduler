@@ -192,8 +192,9 @@ def time_related_score(machines, standard):
             time_left_of_machine += j.getTime()
             diff = j.getDue() - each_job_execution_time
             for comp in j.getComponent():
-                startTime = datetime.datetime.min + datetime.timedelta(seconds = int(component_start_time))
-                endTime = datetime.datetime.min + datetime.timedelta(seconds = int(component_start_time + comp.getTime()))
+                startTime = datetime.datetime.fromtimestamp(int(component_start_time)).strftime('%Y-%m-%d %H:%M:%S')
+                endTime = datetime.datetime.fromtimestamp(int(component_start_time + comp.getTime())).strftime('%Y-%m-%d %H:%M:%S')
+                #    datetime.datetime.min + datetime.timedelta(seconds = int(component_start_time + comp.getTime()))
                 comp.setStartDateTime(startTime)
                 comp.setEndDateTime(endTime)
                 component_start_time += comp.getTime()
@@ -317,14 +318,13 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
     while POPULATION_NUMBER > chrN:
         print(chrN)
         parents = np.random.choice(POPULATION_NUMBER, 2, replace=False, p=PROB)
-        #rate = 1 + 0.6 * float(genN / LAST_GENERATION)
+        rate = 1 + 0.6 * float(genN / LAST_GENERATION)
         p1 = parents[0]
         p2 = parents[1]
-
-        #start = np.random.choice(int(pool_size / 2), 1)
-        start = 5#start[0]
-        #end = int(start + (pool_size * rate) / 2)
-        end = int(start + pool_size / 2)
+        start = np.random.choice(int(pool_size / 2), 1)
+        start = start[0]
+        end = int(start + (pool_size * rate) / 2)
+        #end = int(start + pool_size / 2)
 
         '''output.write("-------- crossover #%d --------\n"%rep + str(start + 1))
         output.write("\n" + str(end) + "\nparent 1 | parent 2 : %d | %d\n" %(p1+1, p2+1))
@@ -359,5 +359,5 @@ def print_job_schedule(row, worksheet, job = None):
         worksheet.write(row + i, 2, job.getGoodNum())
         worksheet.write(row + i, 3, start)
         worksheet.write(row + i, 4, end)
-        row_move = i
-    return row + row_move + 1
+        row_move += 1
+    return row + row_move

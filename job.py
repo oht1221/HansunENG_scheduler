@@ -64,7 +64,7 @@ class Component:
         self.partOf = job
         self.count = 0 #count가 cycletime 만큼 올라가면 제품 하나를 완성했다고 가정
         self.quantity = quantity
-        self.timeLeft = cycleTime
+        self.timeLeft = cycleTime * quantity
         self.endDateTime = None
         self.startDateTime = None
 
