@@ -10,8 +10,10 @@ import random
 PROB = list()
 POPULATION = list()
 INTERPRETED_POPULATION = list()
-POPULATION_NUMBER = 30
-LAST_GENERATION = 10000
+POPULATION_NUMBER = 25
+LAST_GENERATION = 50000
+MUTATION_RATE = 0.1
+
 LAST_JOB_EXECUTION = 0
 TOTAL_DELAYED_TIME = 0
 TOTAL_DELAYED_JOBS_COUNT = 0
@@ -56,7 +58,7 @@ def show_pool(machines, pool = None):
         print(" -------------------------------------------- chromosome %d end -------------------------------------------- " % (i + 1))
         print("")
 
-def interpret(machines, chromosome):
+def interpret1(machines, chromosome):
     for v in machines.values():  # 각 machine에 있는 작업들 제거(초기화)
         v.clear()
     position = 0
@@ -74,6 +76,8 @@ def interpret(machines, chromosome):
         i, direction = choose_next_machine(i, direction, len(machines) - 1)
     interpreted = copy.deepcopy(machines)
     return interpreted
+
+#def interpret2(machines, chromosome)
 
 def choose_next_machine(machineIndex, direction, upper_limit):
     next_machine = machineIndex
@@ -123,10 +127,9 @@ def show_chromosomes(output):
     order_corssover(parent_1, parent_2, start, end)'''
 
 def order_crossover(parent_1, parent_2, start, end):
+    print("chromosome %2d X chromosome %2d" % (parent_1, parent_2))
     p1 = POPULATION[parent_1]
-    print(p1)
     p2 = POPULATION[parent_2]
-    print(p2)
     start = start
     end = end
     offspring = []
@@ -237,7 +240,7 @@ def evaluate(interpreted_chromosome, standard, CNCs):
     LAST_JOB_EXECUTION /= 10000
     INAPPROPRIATE_TYPE_COUNT *= 10
     INAPPROPRIATE_SIZE_COUNT *= 2
-    TOTAL_DELAYED_JOBS_COUNT *= 1000
+    TOTAL_DELAYED_JOBS_COUNT *= 8
 
     score = INAPPROPRIATE_SIZE_COUNT + INAPPROPRIATE_TYPE_COUNT + LAST_JOB_EXECUTION \
             + TOTAL_DELAYED_JOBS_COUNT + TOTAL_DELAYED_TIME
@@ -251,6 +254,7 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
     global POPULATION
     global SCORE_AVG
     global LAST_GENERATION
+    global MUTATION_RATE
     SCORE_AVG = 0
     new_population = []
     INTERPRETED_POPULATION.clear()
@@ -269,7 +273,7 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
         #output.write("------------------- chromosome %d -------------------\n" % (i + 1))
         #show_chromosome(chr, output)
         #output.write("------------------- chromosome %d -------------------\n\n"%(i+1))
-        INTERPRETED_POPULATION.append(interpret(machines, chr))
+        INTERPRETED_POPULATION.append(interpret1(machines, chr))
 
 
     for i, ichr in enumerate(INTERPRETED_POPULATION):
@@ -319,12 +323,12 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
     while POPULATION_NUMBER > chrN:
         print(chrN)
         parents = np.random.choice(POPULATION_NUMBER, 2, replace=False, p=PROB)
-        rate = 1 + 0.8  * float(genN / LAST_GENERATION) #crossover시 초반에는 50%를 보존, 최후에는 90% 보존
+        rate = 1 + 0.8 * float(genN / LAST_GENERATION) #crossover시 초반에는 50%를 보존, 최후에는 90% 보존
         p1 = parents[0]
         p2 = parents[1]
         end = np.random.choice(pool_size, 1)
         end = int(end[0])
-        start = int(end - (pool_size * rate) / 2)
+        start = int(end - (pool_size * rate) * 0.5)
         #end = int(start + pool_size / 2)
 
         '''output.write("-------- crossover #%d --------\n"%rep + str(start + 1))
@@ -338,7 +342,7 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
 
 def evolution(machines, standard, CNCs, pool_size):
     genN = 0
-    while genN < LAST_GENERATION:
+    while genN <= LAST_GENERATION:
         next_generation(machines, standard, CNCs, pool_size, genN)
         genN += 1
 
