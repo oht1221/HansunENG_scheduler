@@ -13,14 +13,14 @@ INTERPRETED_POPULATION = list()
 POPULATION_NUMBER = 25
 LAST_GENERATION = 20000
 MUTATION_RATE = 0.1
-
+'''
 LAST_JOB_EXECUTION = 0
 TOTAL_DELAYED_TIME = 0
 TOTAL_DELAYED_JOBS_COUNT = 0
 INAPPROPRIATE_SIZE_COUNT = 0
 INAPPROPRIATE_TYPE_COUNT = 0
 SCORE_AVG = 0
-
+'''
 def initialize_population(job_pool):
     for i in range(POPULATION_NUMBER):
         POPULATION.append(initial_permutation(job_pool))
@@ -240,13 +240,10 @@ def inversion_with_displacement_mutation(chromosome):
     return
 
 def time_related_score(machines, standard):
-    global TOTAL_DELAYED_JOBS_COUNT
-    global TOTAL_DELAYED_TIME
-    global LAST_JOB_EXECUTION
     TOTAL_DELAYED_JOBS_COUNT = 0
     TOTAL_DELAYED_TIME = 0
     LAST_JOB_EXECUTION = 0
-
+    output = {}
     for m in machines.values():
         each_job_execution_time = standard
         #time_left_of_machine = sum([j.getTime() for j in m])
@@ -270,14 +267,18 @@ def time_related_score(machines, standard):
                 TOTAL_DELAYED_TIME += (-1) * diff
         if time_left_of_machine > LAST_JOB_EXECUTION :
             LAST_JOB_EXECUTION = time_left_of_machine
-    return
+
+
+    output['jobs'] = TOTAL_DELAYED_JOBS_COUNT
+    output['time'] = TOTAL_DELAYED_TIME
+    output['last'] = LAST_JOB_EXECUTION
+
+    return output
 
 def size_type_related_score(machines, CNCs):
-    global INAPPROPRIATE_TYPE_COUNT
-    global INAPPROPRIATE_SIZE_COUNT
     INAPPROPRIATE_TYPE_COUNT = 0
     INAPPROPRIATE_SIZE_COUNT = 0
-
+    output = {}
     for k, m in machines.items(): # machines 번호(key)와 ,포인터 반환
         for c in CNCs:
             if c.getNumber() == k: # 해당 번호의 CNC 찾고
@@ -288,11 +289,13 @@ def size_type_related_score(machines, CNCs):
                         INAPPROPRIATE_SIZE_COUNT += 1
                 break
 
-    return
+    output['type'] = INAPPROPRIATE_TYPE_COUNT
+    output['size'] = INAPPROPRIATE_SIZE_COUNT
+    return output
 
 def evaluate(interpreted_chromosome, standard, CNCs):
-    time_related_score(interpreted_chromosome, standard)
-    #size_type_related_score(interpreted_chromosome, CNCs)
+    output1 = time_related_score(interpreted_chromosome, standard)
+    output2 = size_type_related_score(interpreted_chromosome, CNCs)
 
     '''    global INAPPROPRIATE_SIZE_COUNT
     global INAPPROPRIATE_TYPE_COUNT
@@ -305,20 +308,26 @@ def evaluate(interpreted_chromosome, standard, CNCs):
     INAPPROPRIATE_SIZE_COUNT *= 2
     TOTAL_DELAYED_JOBS_COUNT *= 8'''
 
-    score = INAPPROPRIATE_SIZE_COUNT + INAPPROPRIATE_TYPE_COUNT + LAST_JOB_EXECUTION \
-            + TOTAL_DELAYED_JOBS_COUNT + TOTAL_DELAYED_TIME
+    scores = {}
+    for k, v in output1.items():
+        scores[k] = v
+    for k, v in output2.items():
+        scores[k] = v
 
-    return score
+    return scores
 
 def next_generation(machines, standard, CNCs, pool_size, genN):
 
     fitness_total = 0
     summ = 0
     global POPULATION
-    global SCORE_AVG
     global LAST_GENERATION
     global MUTATION_RATE
-    SCORE_AVG = 0
+    DELAYED_TIMEs = []
+    DELAYED_JOBSs = []
+    LAST_JOBs = []
+    TYPEs = []
+    SIZEs = []
     new_population = []
     INTERPRETED_POPULATION.clear()
     PROB.clear()
@@ -338,15 +347,21 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
         #output.write("------------------- chromosome %d -------------------\n\n"%(i+1))
         INTERPRETED_POPULATION.append(interpret1(machines, chr))
 
-
     for i, ichr in enumerate(INTERPRETED_POPULATION):
-        score = evaluate(ichr, standard, CNCs)
-        SCORE_AVG += score
-        fitness = 1 / score
-        fitness_total = fitness_total + fitness
-        PROB.append(fitness)
-        '''xcel로 아웃풋 만드는 부분'''
-        if output2 != None and i == 0:
+        scores = evaluate(ichr, standard, CNCs)
+        DELAYED_TIME = 1 / (1 + scores['time'])
+        DELAYED_JOBS = 1/ (1 + scores['jobs'])
+        LAST_JOB = 1 / (1 + scores['last'])
+        TYPE = 1 / (1 + scores['type'])
+        SIZE = 1 / (1 + scores['size'])
+        DELAYED_JOBSs.append(DELAYED_JOBS)
+        DELAYED_TIMEs.append(DELAYED_TIME)
+        LAST_JOBs.append(LAST_JOB)
+        TYPEs.append(TYPE)
+        SIZEs.append(SIZE)
+
+    '''xcel로 아웃풋 만드는 부분'''
+    if output2 != None and i == 0:
             schedule = ichr
             for key, value in schedule.items():
                 worksheet = output2.add_sheet(str(key))  # 시트 생성
@@ -366,10 +381,8 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
             output1.write("------------------- chromosome %d -------------------\n" % (i + 1))
             output1.write("\n")
 
-    SCORE_AVG = SCORE_AVG / POPULATION_NUMBER
     if output1 != None:
         output1.write("score average of the generation : %d\n" %(SCORE_AVG))
-    #print("fitness_total : %lf" %(fitness_total))
 
     for i, p in enumerate(PROB):
         if i != len(PROB) - 1:
@@ -377,11 +390,7 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
         else:
             PROB[i] = 1 - summ
         summ += PROB[i]
-    '''
-    for p in PROB:
-        output.write(str(p) + " | ")
-    output.write("\n\n")
-    '''
+    '''-----starting reproduction-----'''
     chrN = 0
     while POPULATION_NUMBER > chrN:
         print(chrN)
@@ -400,7 +409,7 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
         offspring = order_crossover(p1, p2, start, end)
         new_population.append(offspring)
         chrN += 1
-
+    '''----end reproduction-----'''
     POPULATION = new_population
 
 def evolution(machines, standard, CNCs, pool_size):
@@ -430,5 +439,9 @@ def print_job_schedule(row, worksheet, job = None):
         row_move += 1
     return row + row_move
 
-def normalize():
+def normalize(score):
+    avg = sum(score) / len(score)
+    min = min(score)
+    return
+def print_score_output():
     return
