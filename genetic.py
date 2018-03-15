@@ -439,9 +439,15 @@ def print_job_schedule(row, worksheet, job = None):
         row_move += 1
     return row + row_move
 
-def normalize(score):
+def linearNormalize(score):
     avg = sum(score) / len(score)
-    min = min(score)
-    return
+    minimum = min(score)
+    scaled = []
+    for s in score:
+        new = avg * (s - minimum) / (avg - minimum)
+        scaled.append(new)
+
+    return scaled
+
 def print_score_output():
     return
