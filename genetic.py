@@ -1,4 +1,4 @@
-import scheduler
+from scheduler import *
 import xlwt
 import time
 import datetime
@@ -11,7 +11,7 @@ PROB = list()
 POPULATION = list()
 INTERPRETED_POPULATION = list()
 POPULATION_NUMBER = 25
-LAST_GENERATION = 50000
+LAST_GENERATION = 20000
 MUTATION_RATE = 0.1
 
 LAST_JOB_EXECUTION = 0
@@ -74,10 +74,73 @@ def interpret1(machines, chromosome):
             break
         position = position + 1
         i, direction = choose_next_machine(i, direction, len(machines) - 1)
-    interpreted = copy.deepcopy(machines)
+    interpreted = {}
+    for k, v in machines.items():
+        interpreted[k] = []
+        for j in v:
+            interpreted[k].append(j)
     return interpreted
 
-#def interpret2(machines, chromosome)
+
+def interpret2(machines, chromosome, CNCs):
+    for v in machines.values():  # 각 machine에 있는 작업들 제거(초기화)
+        v.clear()
+    unAssigned = []
+    '''for cnc in CNCs:
+        machines[cnc.getNumber()] = list()'''
+    normPool = list()
+    hexPool = list()
+    splitPool(chromosome, normPool, hexPool)
+    # normPool.sort(key=lambda x: x.getDue())
+    # hexPool.sort(key=lambda x: x.getDue())
+    # normPool = permutations(normPool,len(normPool))
+    # hexPool = permutations(hexPool,len(hexPool))
+    normCNCs = list(filter(lambda x: x.getShape() == 0, CNCs))
+    hexCNCs = list(filter(lambda x: x.getShape() == 1, CNCs))
+    # sortedNormPool = sorted(normPool, key = lambda j : j.getDue())
+    # sortedHexPool = sorted(hexPool, key = lambda j: j.getDue())
+
+    for i, j in enumerate(normPool):
+
+        selected_CNCs = []
+        for c in normCNCs:
+            if c.getGround() <= j.getSize() <= c.getCeiling():  # size 맞는 CNC는 모두 찾음
+                selected_CNCs.append(c)
+
+        timeLefts = [sum([j.getTime() for j in machines[c.getNumber()]]) for c in selected_CNCs]
+        if len(timeLefts) <= 0:  # 조건에 맞는 CNC가 하나도 없으면
+            unAssigned.append(j)
+            continue
+        minValue = min(timeLefts)
+        minIndex = timeLefts.index(minValue)
+        cnc = selected_CNCs[minIndex]
+        (machines[cnc.getNumber()]).append(j)
+        j.assignedTo(cnc)
+
+
+    for i, j in enumerate(hexPool):
+
+        selected_CNCs = []
+        for c in hexCNCs:
+            if (c.getGround() <= j.getSize() <= c.getCeiling()):  # size 맞는 CNC는 모두 찾음
+                selected_CNCs.append(c)
+
+        timeLefts = [sum([j.getTime() for j in machines[c.getNumber()]]) for c in selected_CNCs]
+        if len(timeLefts) <= 0:  # 조건에 맞는 CNC가 하나도 없으면
+            unAssigned.append(j)
+            continue
+        minValue = min(timeLefts)
+        minIndex = timeLefts.index(minValue)
+        cnc = selected_CNCs[minIndex]
+        (machines[cnc.getNumber()]).append(j)
+        j.assignedTo(cnc)
+
+    interpreted = {}
+    for k, v in machines.items():
+        interpreted[k] = []
+        for j in v:
+            interpreted[k].append(j)
+    return interpreted
 
 def choose_next_machine(machineIndex, direction, upper_limit):
     next_machine = machineIndex
@@ -154,9 +217,9 @@ def order_crossover(parent_1, parent_2, start, end):
 
 def inversion_mutation(chromosome):
     position = random.randrange(0, len(chromosome))
-    left = chromosome[position - 1]
-    chromosome[position - 1] = chromosome[position + 1]
-    chromosome[position + 1] = left
+    left = chromosome[(position - 1) % len(chromosome)]
+    chromosome[(position - 1) % len(chromosome)] = chromosome[(position + 1) % len(chromosome)]
+    chromosome[(position + 1) % len(chromosome)] = left
 
 def inversion_with_displacement_mutation(chromosome):
     position1 = random.randrange(0, len(chromosome))
@@ -229,18 +292,18 @@ def size_type_related_score(machines, CNCs):
 
 def evaluate(interpreted_chromosome, standard, CNCs):
     time_related_score(interpreted_chromosome, standard)
-    size_type_related_score(interpreted_chromosome, CNCs)
+    #size_type_related_score(interpreted_chromosome, CNCs)
 
-    global INAPPROPRIATE_SIZE_COUNT
+    '''    global INAPPROPRIATE_SIZE_COUNT
     global INAPPROPRIATE_TYPE_COUNT
     global LAST_JOB_EXECUTION
     global TOTAL_DELAYED_JOBS_COUNT
     global TOTAL_DELAYED_TIME
-    TOTAL_DELAYED_TIME /= 10000
-    LAST_JOB_EXECUTION /= 10000
+    TOTAL_DELAYED_TIME = 10000
+    LAST_JOB_EXECUTION = 10000
     INAPPROPRIATE_TYPE_COUNT *= 10
     INAPPROPRIATE_SIZE_COUNT *= 2
-    TOTAL_DELAYED_JOBS_COUNT *= 8
+    TOTAL_DELAYED_JOBS_COUNT *= 8'''
 
     score = INAPPROPRIATE_SIZE_COUNT + INAPPROPRIATE_TYPE_COUNT + LAST_JOB_EXECUTION \
             + TOTAL_DELAYED_JOBS_COUNT + TOTAL_DELAYED_TIME
@@ -259,7 +322,7 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
     new_population = []
     INTERPRETED_POPULATION.clear()
     PROB.clear()
-    if genN % 500 == 0:
+    if genN % 1000 == 0:
         output1 = open("./results/generation_%d_result.txt"%genN, "w")
         output2 = xlwt.Workbook(encoding='utf-8')  # utf-8 인코딩 방식의 workbook 생성
         output2.default_style.font.height = 20 * 11  # (11pt) 기본폰트설정 다양한건 찾아보길
@@ -366,3 +429,6 @@ def print_job_schedule(row, worksheet, job = None):
         worksheet.write(row + i, 4, end)
         row_move += 1
     return row + row_move
+
+def normalize():
+    return

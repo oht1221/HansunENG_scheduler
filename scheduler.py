@@ -294,7 +294,7 @@ def schedule(CNCs, job_pool, machines):
             if (c.getGround() <= j.getSize() <= c.getCeiling()):  # size 맞는 CNC는 모두 찾음
                 selected_CNCs.append(c)
 
-                timeLefts = [sum([j.getTime() for j in machines[c.getNumber()]]) for c in selected_CNCs]
+        timeLefts = [sum([j.getTime() for j in machines[c.getNumber()]]) for c in selected_CNCs]
         minValue = min(timeLefts)
         minIndex = timeLefts.index(minValue)
         cnc = selected_CNCs[minIndex]

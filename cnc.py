@@ -55,7 +55,7 @@ class CNC:
 
     def get_timeLeft(self):
         self.timeLeft = sum([job.getTime() for job in self.jobQ])
-        return self.timeLeft
+        return int(self.timeLeft)
 
     def getGround(self):
         return self.ground
