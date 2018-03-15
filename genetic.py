@@ -360,6 +360,12 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
         TYPEs.append(TYPE)
         SIZEs.append(SIZE)
 
+    linearNormalize(DELAYED_TIMEs)
+    linearNormalize(DELAYED_JOBSs)
+    linearNormalize(LAST_JOBs)
+    linearNormalize(TYPE)
+    linearNormalize(SIZE)
+
     '''xcel로 아웃풋 만드는 부분'''
     if output2 != None and i == 0:
             schedule = ichr
