@@ -7,11 +7,10 @@ import numpy as np
 import copy
 import random
 
-PROB = list()
 POPULATION = list()
 INTERPRETED_POPULATION = list()
-POPULATION_NUMBER = 25
-LAST_GENERATION = 20000
+POPULATION_NUMBER = 20
+LAST_GENERATION = 10000
 MUTATION_RATE = 0.1
 '''
 LAST_JOB_EXECUTION = 0
@@ -213,6 +212,7 @@ def order_crossover(parent_1, parent_2, start, end):
         if not not_selected:
             break
 
+
     return offspring
 
 def inversion_mutation(chromosome):
@@ -270,7 +270,7 @@ def time_related_score(machines, standard):
 
 
     output['jobs'] = TOTAL_DELAYED_JOBS_COUNT
-    output['time'] = TOTAL_DELAYED_TIME
+    output['time'] = TOTAL_DELAYED_TIME / (3600 * 12)
     output['last'] = LAST_JOB_EXECUTION
 
     return output
@@ -295,7 +295,7 @@ def size_type_related_score(machines, CNCs):
 
 def evaluate(interpreted_chromosome, standard, CNCs):
     output1 = time_related_score(interpreted_chromosome, standard)
-    output2 = size_type_related_score(interpreted_chromosome, CNCs)
+    #output2 = size_type_related_score(interpreted_chromosome, CNCs)
 
     '''    global INAPPROPRIATE_SIZE_COUNT
     global INAPPROPRIATE_TYPE_COUNT
@@ -311,15 +311,13 @@ def evaluate(interpreted_chromosome, standard, CNCs):
     scores = {}
     for k, v in output1.items():
         scores[k] = v
-    for k, v in output2.items():
+    #for k, v in output2.items():
         scores[k] = v
 
     return scores
 
 def next_generation(machines, standard, CNCs, pool_size, genN):
 
-    fitness_total = 0
-    summ = 0
     global POPULATION
     global LAST_GENERATION
     global MUTATION_RATE
@@ -330,8 +328,7 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
     SIZEs = []
     new_population = []
     INTERPRETED_POPULATION.clear()
-    PROB.clear()
-    if genN % 1000 == 0:
+    if genN % 500 == 0:
         output1 = open("./results/generation_%d_result.txt"%genN, "w")
         output2 = xlwt.Workbook(encoding='utf-8')  # utf-8 인코딩 방식의 workbook 생성
         output2.default_style.font.height = 20 * 11  # (11pt) 기본폰트설정 다양한건 찾아보길
@@ -345,57 +342,35 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
         #output.write("------------------- chromosome %d -------------------\n" % (i + 1))
         #show_chromosome(chr, output)
         #output.write("------------------- chromosome %d -------------------\n\n"%(i+1))
-        INTERPRETED_POPULATION.append(interpret1(machines, chr))
+        INTERPRETED_POPULATION.append(interpret2(machines, chr, CNCs))
 
     for i, ichr in enumerate(INTERPRETED_POPULATION):
         scores = evaluate(ichr, standard, CNCs)
-        DELAYED_TIME = 1 / (1 + scores['time'])
-        DELAYED_JOBS = 1/ (1 + scores['jobs'])
-        LAST_JOB = 1 / (1 + scores['last'])
-        TYPE = 1 / (1 + scores['type'])
-        SIZE = 1 / (1 + scores['size'])
+        DELAYED_TIME = scores['time']
+        DELAYED_JOBS = scores['jobs']
+        LAST_JOB = scores['last']
+        #TYPE = scores['type']
+        #SIZE = scores['size']
         DELAYED_JOBSs.append(DELAYED_JOBS)
         DELAYED_TIMEs.append(DELAYED_TIME)
         LAST_JOBs.append(LAST_JOB)
-        TYPEs.append(TYPE)
-        SIZEs.append(SIZE)
+        #TYPEs.append(TYPE)
+        #SIZEs.append(SIZE)
 
-    linearNormalize(DELAYED_TIMEs)
-    linearNormalize(DELAYED_JOBSs)
-    linearNormalize(LAST_JOBs)
-    linearNormalize(TYPE)
-    linearNormalize(SIZE)
+    #norm_DELAYED_JOBSs = invert_linear_normalize(DELAYED_JOBSs)
+    norm_DELAYED_TIMEs = invert_linear_normalize(DELAYED_TIMEs)
+    norm_LAST_JOBs = invert_linear_normalize(LAST_JOBs)
+    #norm_TYPEs = invert_linear_normalize(TYPEs)
+    #norm_SIZEs = invert_linear_normalize(SIZEs)
 
-    '''xcel로 아웃풋 만드는 부분'''
-    if output2 != None and i == 0:
-            schedule = ichr
-            for key, value in schedule.items():
-                worksheet = output2.add_sheet(str(key))  # 시트 생성
-                row = print_job_schedule(0, worksheet)
-                for i, job in enumerate(value):
-                    row = print_job_schedule(row, worksheet, job)
-            output2.save("schedule.xls")  # 엑셀 파일 저장 및 생성
-        '''xcel로 아웃풋 만드는 부분'''
-        if output1 != None: #파일이 열려있으면
-            output1.write("------------------- chromosome %d -------------------\n" % (i + 1))
-            output1.write("inappropriate_size_count: %d\n" % (INAPPROPRIATE_SIZE_COUNT))
-            output1.write("inappropriate_type_count: %d\n" % (INAPPROPRIATE_TYPE_COUNT))
-            output1.write("last_job_execution: %d\n" % (LAST_JOB_EXECUTION))
-            output1.write("total_delayed_jobs_count: %d\n" % (TOTAL_DELAYED_JOBS_COUNT))
-            output1.write("total_delayed_time: %d\n" % (TOTAL_DELAYED_TIME))
-            output1.write("total_score: %d\n" % (score))
-            output1.write("------------------- chromosome %d -------------------\n" % (i + 1))
-            output1.write("\n")
+    Min = min(DELAYED_TIMEs)
+    indexOfBest = DELAYED_TIMEs.index(Min)
+    if output1 != None: #파일이 열려있으면
+        print_score_output(output1, DELAYED_TIMEs, DELAYED_JOBSs, LAST_JOBs)
+    if output2 != None:
+        print_job_schedule(output2, indexOfBest, genN)
 
-    if output1 != None:
-        output1.write("score average of the generation : %d\n" %(SCORE_AVG))
-
-    for i, p in enumerate(PROB):
-        if i != len(PROB) - 1:
-            PROB[i] = PROB[i] / fitness_total
-        else:
-            PROB[i] = 1 - summ
-        summ += PROB[i]
+    PROB = calculate_prob(norm_DELAYED_TIMEs)
     '''-----starting reproduction-----'''
     chrN = 0
     while POPULATION_NUMBER > chrN:
@@ -416,6 +391,7 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
         new_population.append(offspring)
         chrN += 1
     '''----end reproduction-----'''
+
     POPULATION = new_population
 
 def evolution(machines, standard, CNCs, pool_size):
@@ -424,36 +400,59 @@ def evolution(machines, standard, CNCs, pool_size):
         next_generation(machines, standard, CNCs, pool_size, genN)
         genN += 1
 
-def print_job_schedule(row, worksheet, job = None):
-    if row == 0:
+def print_job_schedule(output, indexOfMin, genN):
+    schedule = INTERPRETED_POPULATION[indexOfMin]
+    for key, value in schedule.items():
+        row = 0
+        worksheet = output.add_sheet(str(key))  # 시트 생성
         worksheet.write(row, 0, "작업지시서 번호")
         worksheet.write(row, 1, "공정")
         worksheet.write(row, 2, "품번")
         worksheet.write(row, 3, "시작")
         worksheet.write(row, 4, "종료")
-        return row + 1
+        worksheet.write(row, 5, str(indexOfMin))
+        row += 1
+        for i, job in enumerate(value):
+            for j, comp in enumerate(job.getComponent()):
+                start = comp.getStartDateTime()
+                end = comp.getEndDateTime()
+                worksheet.write(row, 0, job.getWorkno())
+                worksheet.write(row, 1, "P%d" % (j + 1))
+                worksheet.write(row, 2, job.getGoodNum())
+                worksheet.write(row, 3, start)
+                worksheet.write(row, 4, end)
+                row += 1
+    output.save("schedule%d.xls"%genN)  # 엑셀 파일 저장 및 생성
+    return
 
-    row_move = 0
-    for i, comp in enumerate(job.getComponent()):
-        start = comp.getStartDateTime()
-        end = comp.getEndDateTime()
-        worksheet.write(row + i, 0, job.getWorkno())
-        worksheet.write(row + i, 1, "P%d"%(i+1))
-        worksheet.write(row + i, 2, job.getGoodNum())
-        worksheet.write(row + i, 3, start)
-        worksheet.write(row + i, 4, end)
-        row_move += 1
-    return row + row_move
-
-def linearNormalize(score):
+def invert_linear_normalize(score):
+    scaled = []
     avg = sum(score) / len(score)
     minimum = min(score)
-    scaled = []
     for s in score:
         new = avg * (s - minimum) / (avg - minimum)
         scaled.append(new)
-
+    for i, s in enumerate(score):
+        scaled[i] = (1 / (1 + s))
     return scaled
 
-def print_score_output():
+def print_score_output(output, delayed_times, delayed_jobs, last_job):
+    global POPULATION
+    for i in range(0, POPULATION_NUMBER):
+        output.write("------------------- chromosome %d -------------------\n" % (i + 1))
+        #output.write("inappropriate_size_count: %d\n" % (sizes[i]))
+        #output.write("inappropriate_type_count: %d\n" % (types[i]))
+        output.write("last_job_execution: %d\n" % (last_job[i]))
+        output.write("total_delayed_jobs_count: %d\n" % (delayed_jobs[i]))
+        output.write("total_delayed_time: %d\n" % (delayed_times[i]))
+        output.write("------------------- chromosome %d -------------------\n" % (i + 1))
+        output.write("\n")
     return
+
+def calculate_prob(delayed_times):
+    SUM = sum(delayed_times)
+    PROB = []
+    for dt in delayed_times:
+        PROB.append(dt/SUM)
+
+    return PROB
