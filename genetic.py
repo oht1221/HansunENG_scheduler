@@ -10,8 +10,9 @@ import random
 POPULATION = list()
 INTERPRETED_POPULATION = list()
 POPULATION_NUMBER = 20
-LAST_GENERATION = 10000
+LAST_GENERATION = 20000
 MUTATION_RATE = 0.1
+DISPLAY_INTERVAL = 500
 '''
 LAST_JOB_EXECUTION = 0
 TOTAL_DELAYED_TIME = 0
@@ -328,7 +329,7 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
     SIZEs = []
     new_population = []
     INTERPRETED_POPULATION.clear()
-    if genN % 500 == 0:
+    if genN % DISPLAY_INTERVAL == 0:
         output1 = open("./results/generation_%d_result.txt"%genN, "w")
         output2 = xlwt.Workbook(encoding='utf-8')  # utf-8 인코딩 방식의 workbook 생성
         output2.default_style.font.height = 20 * 11  # (11pt) 기본폰트설정 다양한건 찾아보길
@@ -422,7 +423,7 @@ def print_job_schedule(output, indexOfMin, genN):
                 worksheet.write(row, 3, start)
                 worksheet.write(row, 4, end)
                 row += 1
-    output.save("schedule%d.xls"%genN)  # 엑셀 파일 저장 및 생성
+    output.save("./schdules/schedule%d.xls"%genN)  # 엑셀 파일 저장 및 생성
     return
 
 def invert_linear_normalize(score):
