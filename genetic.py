@@ -6,11 +6,12 @@ import AccessDB
 import numpy as np
 import copy
 import random
+import math
 
 POPULATION = list()
 INTERPRETED_POPULATION = list()
-POPULATION_NUMBER = 20
-LAST_GENERATION = 20000
+POPULATION_NUMBER = 10
+LAST_GENERATION = 40000
 MUTATION_RATE = 0.1
 DISPLAY_INTERVAL = 500
 '''
@@ -212,15 +213,25 @@ def order_crossover(parent_1, parent_2, start, end):
         i = i + 1
         if not not_selected:
             break
-
-
+    mutation = np.random.choice(2, replace = False, p = [1 - MUTATION_RATE, MUTATION_RATE])
+    if mutation == 1:
+        inversion_mutation(offspring)
     return offspring
 
 def inversion_mutation(chromosome):
-    position = random.randrange(0, len(chromosome))
-    left = chromosome[(position - 1) % len(chromosome)]
-    chromosome[(position - 1) % len(chromosome)] = chromosome[(position + 1) % len(chromosome)]
-    chromosome[(position + 1) % len(chromosome)] = left
+    total = len(chromosome)
+    interval = round(len(chromosome) / 3)
+    start = random.randrange(0, total) #시작점 (왼쪽)
+    end = start + interval - 1
+    i = 0
+    print(start)
+    print(end)
+    while i < (interval / 2):
+        temp = chromosome[(start + i) % total]
+        chromosome[(start + i) % total] = chromosome[(end - i) % total]
+        chromosome[(end - i) % total] = temp
+        i += 1
+    return chromosome
 
 def inversion_with_displacement_mutation(chromosome):
     position1 = random.randrange(0, len(chromosome))
@@ -270,9 +281,9 @@ def time_related_score(machines, standard):
             LAST_JOB_EXECUTION = time_left_of_machine
 
 
-    output['jobs'] = TOTAL_DELAYED_JOBS_COUNT
-    output['time'] = TOTAL_DELAYED_TIME / (3600 * 12)
-    output['last'] = LAST_JOB_EXECUTION
+    output['jobs'] = int(TOTAL_DELAYED_JOBS_COUNT)
+    output['time'] = int(TOTAL_DELAYED_TIME / (3600 * 12))
+    output['last'] = int(LAST_JOB_EXECUTION)
 
     return output
 
@@ -359,8 +370,8 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
         #SIZEs.append(SIZE)
 
     #norm_DELAYED_JOBSs = invert_linear_normalize(DELAYED_JOBSs)
-    norm_DELAYED_TIMEs = invert_linear_normalize(DELAYED_TIMEs)
-    norm_LAST_JOBs = invert_linear_normalize(LAST_JOBs)
+    norm_DELAYED_TIMEs = invert_sigma_normalize(DELAYED_TIMEs, 3)
+    #norm_LAST_JOBs = invert_linear_normalize(LAST_JOBs)
     #norm_TYPEs = invert_linear_normalize(TYPEs)
     #norm_SIZEs = invert_linear_normalize(SIZEs)
 
@@ -377,17 +388,14 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
     while POPULATION_NUMBER > chrN:
         print(chrN)
         parents = np.random.choice(POPULATION_NUMBER, 2, replace=False, p=PROB)
-        rate = 1 + 0.8 * float(genN / LAST_GENERATION) #crossover시 초반에는 50%를 보존, 최후에는 90% 보존
+        #rate = 1 + 0.8 * float(genN / LAST_GENERATION) #crossover시 초반에는 50%를 보존, 최후에는 90% 보존
         p1 = parents[0]
         p2 = parents[1]
         end = np.random.choice(pool_size, 1)
         end = int(end[0])
-        start = int(end - (pool_size * rate) * 0.5)
+        start = int(end - (pool_size) * 0.8)
         #end = int(start + pool_size / 2)
 
-        '''output.write("-------- crossover #%d --------\n"%rep + str(start + 1))
-        output.write("\n" + str(end) + "\nparent 1 | parent 2 : %d | %d\n" %(p1+1, p2+1))
-        output.write("\n-------- crossover #%d --------\n"%rep)'''
         offspring = order_crossover(p1, p2, start, end)
         new_population.append(offspring)
         chrN += 1
@@ -423,18 +431,31 @@ def print_job_schedule(output, indexOfMin, genN):
                 worksheet.write(row, 3, start)
                 worksheet.write(row, 4, end)
                 row += 1
-    output.save("./schdules/schedule%d.xls"%genN)  # 엑셀 파일 저장 및 생성
+    output.save("./schedules/schedule%d.xls"%genN)  # 엑셀 파일 저장 및 생성
     return
 
 def invert_linear_normalize(score):
     scaled = []
-    avg = sum(score) / len(score)
+    avg = sum(score)
+    avg /= len(score)
     minimum = min(score)
     for s in score:
         new = avg * (s - minimum) / (avg - minimum)
         scaled.append(new)
     for i, s in enumerate(score):
         scaled[i] = (1 / (1 + s))
+    return scaled
+
+def invert_sigma_normalize(score, c):
+    scaled = []
+    avg = sum(score) / len(score)
+    sigma = np.std(score)
+    for s in score:
+        new = ((s - avg + c * sigma) / sigma)
+        if new > 0:
+            scaled.append(1 / (1 + new))
+        else:
+            scaled.append(0)
     return scaled
 
 def print_score_output(output, delayed_times, delayed_jobs, last_job):
