@@ -10,10 +10,11 @@ import math
 
 POPULATION = list()
 INTERPRETED_POPULATION = list()
-POPULATION_NUMBER = 10
-LAST_GENERATION = 40000
+POPULATION_NUMBER = 20
+LAST_GENERATION = 10000
 MUTATION_RATE = 0.1
-DISPLAY_INTERVAL = 500
+DISPLAY_INTERVAL = 200
+
 '''
 LAST_JOB_EXECUTION = 0
 TOTAL_DELAYED_TIME = 0
@@ -82,7 +83,6 @@ def interpret1(machines, chromosome):
             interpreted[k].append(j)
     return interpreted
 
-
 def interpret2(machines, chromosome, CNCs):
     for v in machines.values():  # 각 machine에 있는 작업들 제거(초기화)
         v.clear()
@@ -141,6 +141,7 @@ def interpret2(machines, chromosome, CNCs):
         interpreted[k] = []
         for j in v:
             interpreted[k].append(j)
+
     return interpreted
 
 def choose_next_machine(machineIndex, direction, upper_limit):
@@ -282,8 +283,8 @@ def time_related_score(machines, standard):
 
 
     output['jobs'] = int(TOTAL_DELAYED_JOBS_COUNT)
-    output['time'] = int(TOTAL_DELAYED_TIME / (3600 * 12))
-    output['last'] = int(LAST_JOB_EXECUTION)
+    output['time'] = int(TOTAL_DELAYED_TIME / (3600))
+    output['last'] = int(LAST_JOB_EXECUTION / (3600))
 
     return output
 
@@ -340,6 +341,7 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
     SIZEs = []
     new_population = []
     INTERPRETED_POPULATION.clear()
+
     if genN % DISPLAY_INTERVAL == 0:
         output1 = open("./results/generation_%d_result.txt"%genN, "w")
         output2 = xlwt.Workbook(encoding='utf-8')  # utf-8 인코딩 방식의 workbook 생성
@@ -348,12 +350,8 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
     else :
         output1 = None
         output2 = None
-    # 50의 배수 repetition마다 output 파일 생성
 
     for i, chr in enumerate(POPULATION):
-        #output.write("------------------- chromosome %d -------------------\n" % (i + 1))
-        #show_chromosome(chr, output)
-        #output.write("------------------- chromosome %d -------------------\n\n"%(i+1))
         INTERPRETED_POPULATION.append(interpret2(machines, chr, CNCs))
 
     for i, ichr in enumerate(INTERPRETED_POPULATION):
@@ -371,7 +369,7 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
 
     #norm_DELAYED_JOBSs = invert_linear_normalize(DELAYED_JOBSs)
     norm_DELAYED_TIMEs = invert_sigma_normalize(DELAYED_TIMEs, 3)
-    #norm_LAST_JOBs = invert_linear_normalize(LAST_JOBs)
+    norm_LAST_JOBs = invert_sigma_normalize(LAST_JOBs, 3)
     #norm_TYPEs = invert_linear_normalize(TYPEs)
     #norm_SIZEs = invert_linear_normalize(SIZEs)
 
@@ -381,19 +379,21 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
         print_score_output(output1, DELAYED_TIMEs, DELAYED_JOBSs, LAST_JOBs)
     if output2 != None:
         print_job_schedule(output2, indexOfBest, genN)
-
-    PROB = calculate_prob(norm_DELAYED_TIMEs)
+    weighted_sum = []
+    for i in range(0, POPULATION_NUMBER):
+        weighted_sum.append(norm_DELAYED_TIMEs[i] + norm_LAST_JOBs[i])
+    PROB = calculate_prob(weighted_sum)
     '''-----starting reproduction-----'''
     chrN = 0
     while POPULATION_NUMBER > chrN:
         print(chrN)
         parents = np.random.choice(POPULATION_NUMBER, 2, replace=False, p=PROB)
-        #rate = 1 + 0.8 * float(genN / LAST_GENERATION) #crossover시 초반에는 50%를 보존, 최후에는 90% 보존
+        rate = 1 + 0.5 * float(genN / LAST_GENERATION) #crossover시 초반에는 50%를 보존, 최후에는 90% 보존
         p1 = parents[0]
         p2 = parents[1]
         end = np.random.choice(pool_size, 1)
         end = int(end[0])
-        start = int(end - (pool_size) * 0.8)
+        start = int(end - (pool_size) * 0.6 * rate)
         #end = int(start + pool_size / 2)
 
         offspring = order_crossover(p1, p2, start, end)
@@ -403,7 +403,7 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
 
     POPULATION = new_population
 
-def evolution(machines, standard, CNCs, pool_size):
+def start(machines, standard, CNCs, pool_size):
     genN = 0
     while genN <= LAST_GENERATION:
         next_generation(machines, standard, CNCs, pool_size, genN)
@@ -478,3 +478,5 @@ def calculate_prob(delayed_times):
         PROB.append(dt/SUM)
 
     return PROB
+
+def update_best(output):
