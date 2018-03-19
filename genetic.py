@@ -10,11 +10,11 @@ import math
 
 POPULATION = list()
 INTERPRETED_POPULATION = list()
-POPULATION_NUMBER = 20
-LAST_GENERATION = 10000
-MUTATION_RATE = 0.1
+POPULATION_NUMBER = 25
+LAST_GENERATION = 16000
+MUTATION_RATE = 0.05
 DISPLAY_INTERVAL = 200
-
+BEST10 = [None] * 10
 '''
 LAST_JOB_EXECUTION = 0
 TOTAL_DELAYED_TIME = 0
@@ -330,7 +330,7 @@ def evaluate(interpreted_chromosome, standard, CNCs):
     return scores
 
 def next_generation(machines, standard, CNCs, pool_size, genN):
-
+    global BEST10
     global POPULATION
     global LAST_GENERATION
     global MUTATION_RATE
@@ -366,6 +366,11 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
         LAST_JOBs.append(LAST_JOB)
         #TYPEs.append(TYPE)
         #SIZEs.append(SIZE)
+
+    if genN == 0:
+        BEST10 = sorted(DELAYED_TIMEs, reverse= True)[0:10] #BEST10 초기화
+    else:
+        update_best(DELAYED_TIMEs)
 
     #norm_DELAYED_JOBSs = invert_linear_normalize(DELAYED_JOBSs)
     norm_DELAYED_TIMEs = invert_sigma_normalize(DELAYED_TIMEs, 3)
@@ -469,6 +474,9 @@ def print_score_output(output, delayed_times, delayed_jobs, last_job):
         output.write("total_delayed_time: %d\n" % (delayed_times[i]))
         output.write("------------------- chromosome %d -------------------\n" % (i + 1))
         output.write("\n")
+    for b in BEST10:
+        output.write(int(b))
+        output.write("\n")
     return
 
 def calculate_prob(delayed_times):
@@ -479,4 +487,23 @@ def calculate_prob(delayed_times):
 
     return PROB
 
-def update_best(output):
+def update_best(a):
+    global BEST10
+    Sorted = sorted(a)
+    move = 1
+    for i, s in enumerate(Sorted):
+        if move == 0:
+            break
+        move = 0
+        for j, b in enumerate(BEST10):
+            if s >= b:
+                if j == 0:
+                    break
+                BEST10[j - 1] = s
+                # print(BEST10)
+                break
+            if j == len(BEST10) - 1:
+                BEST10[len(BEST10) - 1] = s
+                #print(BEST10)
+            move += 1
+    return
