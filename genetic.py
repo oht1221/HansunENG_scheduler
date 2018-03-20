@@ -10,9 +10,9 @@ import math
 
 POPULATION = list()
 INTERPRETED_POPULATION = list()
-POPULATION_NUMBER = 25
-LAST_GENERATION = 16000
-MUTATION_RATE = 0.05
+POPULATION_NUMBER = 30
+LAST_GENERATION = 20000
+MUTATION_RATE = 0.1
 DISPLAY_INTERVAL = 200
 BEST10 = [None] * 10
 '''
@@ -80,7 +80,8 @@ def interpret1(machines, chromosome):
     for k, v in machines.items():
         interpreted[k] = []
         for j in v:
-            interpreted[k].append(j)
+            new = unit(j)
+            interpreted[k].append(new)
     return interpreted
 
 def interpret2(machines, chromosome, CNCs):
@@ -140,7 +141,8 @@ def interpret2(machines, chromosome, CNCs):
     for k, v in machines.items():
         interpreted[k] = []
         for j in v:
-            interpreted[k].append(j)
+            new = unit(j)
+            interpreted[k].append(new)
 
     return interpreted
 
@@ -258,23 +260,30 @@ def time_related_score(machines, standard):
     LAST_JOB_EXECUTION = 0
     output = {}
     for m in machines.values():
-        each_job_execution_time = standard
+        component_start_time = standard
+        component_end_time = component_start_time
         #time_left_of_machine = sum([j.getTime() for j in m])
         time_left_of_machine = 0
 
-        for j in m:
-            component_start_time = each_job_execution_time
-            each_job_execution_time += j.getTime()
-            time_left_of_machine += j.getTime()
-            diff = j.getDue() - each_job_execution_time
+        for u in m:
+            #each_job_execution_time += j.getTime()
+            times = []
+            j = u.get_job()
             for comp in j.getComponent():
+                time_taken = comp.getTime()
+                component_end_time = component_start_time + time_taken
+                times.append(component_start_time)
+                times.append(component_end_time)
                 startTime = datetime.datetime.fromtimestamp(int(component_start_time)).strftime('%Y-%m-%d %H:%M:%S')
-                endTime = datetime.datetime.fromtimestamp(int(component_start_time + comp.getTime())).strftime('%Y-%m-%d %H:%M:%S')
-                #    datetime.datetime.min + datetime.timedelta(seconds = int(component_start_time + comp.getTime()))
+                endTime = datetime.datetime.fromtimestamp(int(component_end_time)).strftime('%Y-%m-%d %H:%M:%S')
                 comp.setStartDateTime(startTime)
                 comp.setEndDateTime(endTime)
-                component_start_time += comp.getTime()
+                component_start_time = component_end_time
+                time_left_of_machine += time_taken
 
+            u.set_times(times)
+            diff = j.getDue() - component_end_time
+            #time_left_of_machine += j.getTime()
             if diff < 0:
                 TOTAL_DELAYED_JOBS_COUNT += 1
                 TOTAL_DELAYED_TIME += (-1) * diff
@@ -384,6 +393,7 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
         print_score_output(output1, DELAYED_TIMEs, DELAYED_JOBSs, LAST_JOBs)
     if output2 != None:
         print_job_schedule(output2, indexOfBest, genN)
+
     weighted_sum = []
     for i in range(0, POPULATION_NUMBER):
         weighted_sum.append(norm_DELAYED_TIMEs[i] + norm_LAST_JOBs[i])
@@ -426,8 +436,10 @@ def print_job_schedule(output, indexOfMin, genN):
         worksheet.write(row, 4, "종료")
         worksheet.write(row, 5, str(indexOfMin))
         row += 1
-        for i, job in enumerate(value):
-            for j, comp in enumerate(job.getComponent()):
+        for i, unit in enumerate(value):
+            times = unit.times()
+            component = 0
+            for j, time in enumerate(times):
                 start = comp.getStartDateTime()
                 end = comp.getEndDateTime()
                 worksheet.write(row, 0, job.getWorkno())
@@ -475,7 +487,7 @@ def print_score_output(output, delayed_times, delayed_jobs, last_job):
         output.write("------------------- chromosome %d -------------------\n" % (i + 1))
         output.write("\n")
     for b in BEST10:
-        output.write(int(b))
+        output.write(str(b))
         output.write("\n")
     return
 

@@ -11,7 +11,7 @@ class Job:
         self.type = type
         self.size = size
         self.quantity = quantity
-        self.series = []
+        #self.series = []
         self.series  = [Component(time[i], self, quantity) for i in range(len(time))]
         self.due  = due
         self.cnc = None
@@ -81,6 +81,7 @@ class Component:
             self.quantity += -1
 
     def getTime(self):
+        self.timeLeft = self.cycleTime * self.quantity
         return self.timeLeft
 
     def getStartDateTime(self):
@@ -123,3 +124,14 @@ class ReplacementComponent(Component):
     def __init__(self, cycleTime, job):
         super().__init__(cycleTime, job)
 """
+
+class unit:
+    def __init__(self, job, times = None):
+        self.job = job
+        self.times = times
+    def get_times(self):
+        return self.times
+    def get_job(self):
+        return self.job
+    def set_times(self, times):
+        self.times = times
