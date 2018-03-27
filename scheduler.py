@@ -437,3 +437,6 @@ def permutation(pool):
         newElement =  pool.pop(i)
         per.append(newElement)
     return per
+
+def sort(pool):
+    sorted(pool, key = lambda unit : unit.get_job().getDue())

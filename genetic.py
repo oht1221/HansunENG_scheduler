@@ -270,14 +270,14 @@ def time_related_score(machines, standard):
             times = []
             j = u.get_job()
             for comp in j.getComponent():
+                time = []
                 time_taken = comp.getTime()
                 component_end_time = component_start_time + time_taken
-                times.append(component_start_time)
-                times.append(component_end_time)
                 startTime = datetime.datetime.fromtimestamp(int(component_start_time)).strftime('%Y-%m-%d %H:%M:%S')
                 endTime = datetime.datetime.fromtimestamp(int(component_end_time)).strftime('%Y-%m-%d %H:%M:%S')
-                comp.setStartDateTime(startTime)
-                comp.setEndDateTime(endTime)
+                time.append(startTime)
+                time.append(endTime)
+                times.append(time)
                 component_start_time = component_end_time
                 time_left_of_machine += time_taken
 
@@ -287,6 +287,7 @@ def time_related_score(machines, standard):
             if diff < 0:
                 TOTAL_DELAYED_JOBS_COUNT += 1
                 TOTAL_DELAYED_TIME += (-1) * diff
+
         if time_left_of_machine > LAST_JOB_EXECUTION :
             LAST_JOB_EXECUTION = time_left_of_machine
 
@@ -437,11 +438,13 @@ def print_job_schedule(output, indexOfMin, genN):
         worksheet.write(row, 5, str(indexOfMin))
         row += 1
         for i, unit in enumerate(value):
-            times = unit.times()
-            component = 0
+            times = unit.get_times()
+            job = unit.get_job()
             for j, time in enumerate(times):
-                start = comp.getStartDateTime()
-                end = comp.getEndDateTime()
+                start = time[0]
+                end = time[1]
+                #start = comp.getStartDateTime()
+                #end = comp.getEndDateTime()
                 worksheet.write(row, 0, job.getWorkno())
                 worksheet.write(row, 1, "P%d" % (j + 1))
                 worksheet.write(row, 2, job.getGoodNum())
