@@ -129,9 +129,39 @@ class unit:
     def __init__(self, job, times = None):
         self.job = job
         self.times = times
+
     def get_times(self):
         return self.times
     def get_job(self):
         return self.job
+
     def set_times(self, times):
         self.times = times
+        return self.times
+
+class score_ichr:
+    def __init__(self, delayed_jobs = None, delayed_time = None, last_job = None,):
+        self.delayed_jobs = delayed_jobs
+        self.delayed_time = delayed_time
+        self.last_job = last_job
+
+    def get_delayed_jobs(self):
+        return self.delayed_jobs
+    def get_delayed_time(self):
+        return self.delayed_time
+    def get_last_job(self):
+        return self.last_job
+
+    def set_delayed_jobs(self, delayed_jobs):
+        self.delayed_jobs = delayed_jobs
+        return self.delayed_jobs
+    def set_delayed_time(self, delayed_time):
+        self.delayed_time = delayed_time
+        return self.delayed_time
+    def set_last_job(self, last_job):
+        self.last_job = last_job
+        return self.last_job
+
+
+
+

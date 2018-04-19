@@ -10,11 +10,12 @@ import math
 
 POPULATION = list()
 INTERPRETED_POPULATION = list()
-POPULATION_NUMBER = 30
-LAST_GENERATION = 20000
+POPULATION_NUMBER = 25
+LAST_GENERATION = 10000
 MUTATION_RATE = 0.1
-DISPLAY_INTERVAL = 200
+DISPLAY_INTERVAL = 50
 BEST10 = [None] * 10
+
 '''
 LAST_JOB_EXECUTION = 0
 TOTAL_DELAYED_TIME = 0
@@ -74,7 +75,6 @@ def interpret1(machines, chromosome):
         except IndexError as e:
             print(e)
             break
-        position = position + 1
         i, direction = choose_next_machine(i, direction, len(machines) - 1)
     interpreted = {}
     for k, v in machines.items():
@@ -254,12 +254,12 @@ def inversion_with_displacement_mutation(chromosome):
 
     return
 
-def time_related_score(machines, standard):
+def time_related_score(ichr, standard):
     TOTAL_DELAYED_JOBS_COUNT = 0
     TOTAL_DELAYED_TIME = 0
     LAST_JOB_EXECUTION = 0
     output = {}
-    for m in machines.values():
+    for m in ichr.values():
         component_start_time = standard
         component_end_time = component_start_time
         #time_left_of_machine = sum([j.getTime() for j in m])
@@ -290,7 +290,6 @@ def time_related_score(machines, standard):
 
         if time_left_of_machine > LAST_JOB_EXECUTION :
             LAST_JOB_EXECUTION = time_left_of_machine
-
 
     output['jobs'] = int(TOTAL_DELAYED_JOBS_COUNT)
     output['time'] = int(TOTAL_DELAYED_TIME / (3600))
@@ -335,7 +334,7 @@ def evaluate(interpreted_chromosome, standard, CNCs):
     for k, v in output1.items():
         scores[k] = v
     #for k, v in output2.items():
-        scores[k] = v
+    #   scores[k] = v
 
     return scores
 
@@ -379,6 +378,7 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
 
     if genN == 0:
         BEST10 = sorted(DELAYED_TIMEs, reverse= True)[0:10] #BEST10 초기화
+        sorted(job_pool, key=lambda job: job.getDue(), reverse=True)
     else:
         update_best(DELAYED_TIMEs)
 
@@ -471,7 +471,7 @@ def invert_sigma_normalize(score, c):
     avg = sum(score) / len(score)
     sigma = np.std(score)
     for s in score:
-        new = ((s - avg + c * sigma) / sigma)
+        new = ((s - avg + c * sigma) / sigma) #standardization
         if new > 0:
             scaled.append(1 / (1 + new))
         else:

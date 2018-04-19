@@ -4,6 +4,7 @@ import genetic
 import cnc
 import AccessDB
 from collections import deque
+import greedy
 
 if __name__ == "__main__":
     CNCs = []
@@ -22,6 +23,5 @@ if __name__ == "__main__":
     standard = (lambda x: int(time.time()) if (x == 'now') else time.mktime(
         (int(x[0:4]), int(x[4:6]), int(x[6:8]), 12, 0, 0, 0, 0, 0)))(standard)
     standard = int(standard)
-    genetic.initialize_population(JOB_POOL)
-    genetic.start(machines, standard, CNCs, TOTAL_NUMBER_OF_THE_POOL)
-
+    greedy.sort_pool(JOB_POOL)
+    greedy.start(JOB_POOL, machines,CNCs, standard)
