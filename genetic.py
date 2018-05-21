@@ -338,7 +338,7 @@ def evaluate(interpreted_chromosome, standard, CNCs):
 
     return scores
 
-def next_generation(machines, standard, CNCs, pool_size, genN):
+def next_generation(job_pool, machines, standard, CNCs, pool_size, genN):
     global BEST10
     global POPULATION
     global LAST_GENERATION
@@ -419,10 +419,10 @@ def next_generation(machines, standard, CNCs, pool_size, genN):
 
     POPULATION = new_population
 
-def start(machines, standard, CNCs, pool_size):
+def start(job_pool, machines, standard, CNCs, pool_size):
     genN = 0
     while genN <= LAST_GENERATION:
-        next_generation(machines, standard, CNCs, pool_size, genN)
+        next_generation(job_pool, machines, standard, CNCs, pool_size, genN)
         genN += 1
 
 def print_job_schedule(output, indexOfMin, genN):

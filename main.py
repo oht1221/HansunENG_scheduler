@@ -23,5 +23,5 @@ if __name__ == "__main__":
         (int(x[0:4]), int(x[4:6]), int(x[6:8]), 12, 0, 0, 0, 0, 0)))(standard)
     standard = int(standard)
     genetic.initialize_population(JOB_POOL)
-    genetic.start(machines, standard, CNCs, TOTAL_NUMBER_OF_THE_POOL)
+    genetic.start(JOB_POOL, machines, standard, CNCs, TOTAL_NUMBER_OF_THE_POOL)
 
